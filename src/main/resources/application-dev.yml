@@ -1,0 +1,9 @@
+# Local development: `./mvnw spring-boot:run -Dspring-boot.run.profiles=dev`
+spring:
+  thymeleaf:
+    cache: false
+app:
+  demo-data: true
+  bootstrap:
+    coo-email: ${BOOTSTRAP_COO_EMAIL:coo@nirmaan.local}
+    coo-password: ${BOOTSTRAP_COO_PASSWORD:Demo@1234}

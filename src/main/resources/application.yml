@@ -1,0 +1,85 @@
+spring:
+  application:
+    name: nirmaan-reimburse
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/nirmaan}
+    username: ${DB_USER:nirmaan}
+    password: ${DB_PASSWORD:nirmaan}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc.time_zone: UTC
+        format_sql: false
+  flyway:
+    enabled: true
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 25MB
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+  thymeleaf:
+    cache: ${THYMELEAF_CACHE:true}
+  jackson:
+    time-zone: UTC
+
+server:
+  servlet:
+    session:
+      timeout: 8h
+      cookie:
+        http-only: true
+        same-site: lax
+  error:
+    whitelabel:
+      enabled: false
+
+management:
+  health:
+    # Email is best effort; an SMTP outage must not mark the app unhealthy.
+    mail:
+      enabled: false
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+app:
+  base-url: ${APP_BASE_URL:http://localhost:8080}
+  zone: Asia/Kolkata
+  mail:
+    # log = write emails to the application log, smtp = send via spring.mail (MailHog in docker)
+    mode: ${MAIL_MODE:log}
+    from: ${MAIL_FROM:Nirmaan Reimbursements <no-reply@nirmaan.iitm.ac.in>}
+  storage:
+    # local = files on disk, s3 = S3-compatible object storage (MinIO)
+    type: ${STORAGE_TYPE:local}
+    local-root: ${STORAGE_LOCAL_ROOT:./data/uploads}
+    s3:
+      endpoint: ${S3_ENDPOINT:http://localhost:9000}
+      region: ${S3_REGION:us-east-1}
+      bucket: ${S3_BUCKET:nirmaan-claims}
+      access-key: ${S3_ACCESS_KEY:}
+      secret-key: ${S3_SECRET_KEY:}
+  bootstrap:
+    coo-email: ${BOOTSTRAP_COO_EMAIL:}
+    coo-name: ${BOOTSTRAP_COO_NAME:Chief Operating Officer}
+    coo-password: ${BOOTSTRAP_COO_PASSWORD:}
+  security:
+    login-max-attempts: 5
+    login-lock-minutes: 15
+  demo-data: ${DEMO_DATA:false}
+
+logging:
+  level:
+    com.nirmaan: INFO
