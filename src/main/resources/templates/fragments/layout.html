@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="_csrf" th:if="${_csrf != null}" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:if="${_csrf != null}" th:content="${_csrf.headerName}">
+    <title th:text="${title} + ' · Nirmaan Reimbursements'">Nirmaan Reimbursements</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <script th:src="@{/js/app.js}" defer></script>
+</head>
+<body>
+
+<header th:fragment="nav" class="bg-white border-b border-slate-200 sticky top-0 z-20">
+    <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:p-2 focus:bg-white">Skip to content</a>
+    <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
+        <a th:href="@{/}" class="flex items-center gap-2 font-semibold text-indigo-800">
+            <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-700 text-white text-sm" aria-hidden="true">N</span>
+            <span class="hidden sm:inline">Nirmaan Reimbursements</span>
+        </a>
+        <div class="flex items-center gap-3" th:if="${me != null}">
+            <a th:href="@{/notifications}" class="relative p-2 rounded-lg hover:bg-slate-100" aria-label="Notifications">
+                <svg class="h-6 w-6 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5m6 0a3 3 0 11-6 0"/>
+                </svg>
+                <span th:replace="~{fragments/layout :: badge}"></span>
+            </a>
+            <span class="hidden md:block text-sm text-slate-600" th:text="${me.name()}">Name</span>
+            <form th:action="@{/logout}" method="post">
+                <button class="text-sm text-slate-600 hover:text-slate-900 underline-offset-2 hover:underline">Sign out</button>
+            </form>
+        </div>
+    </div>
+    <nav th:if="${me != null}" class="max-w-6xl mx-auto px-4 overflow-x-auto" aria-label="Main">
+        <ul class="flex gap-1 text-sm whitespace-nowrap pb-2">
+            <li sec:authorize="hasRole('TEAM_MEMBER')"><a class="nav-link" th:href="@{/team}">My team</a></li>
+            <li sec:authorize="hasRole('TEAM_MEMBER')"><a class="nav-link" th:href="@{/claims/new}">New claim</a></li>
+            <li sec:authorize="hasAuthority('CLAIM_APPROVE')"><a class="nav-link" th:href="@{/coo/approvals}">Approvals</a></li>
+            <li sec:authorize="hasAnyAuthority('CLAIM_VERIFY','CLAIM_RETURN_REJECT','CLAIM_APPROVE','CLAIM_FLAG_PRIORITY')"><a class="nav-link" th:href="@{/staff/queue}">Verification queue</a></li>
+            <li sec:authorize="hasAuthority('PAYMENT_RECORD')"><a class="nav-link" th:href="@{/finance/payments}">Payments</a></li>
+            <li th:if="${staffSide}"><a class="nav-link" th:href="@{/teams}">Teams</a></li>
+            <li th:if="${staffSide}"><a class="nav-link" th:href="@{/cohorts}">Cohorts</a></li>
+            <li><a class="nav-link" th:href="@{/categories}">Categories</a></li>
+            <li sec:authorize="hasAuthority('AUDIT_LOG_VIEW')"><a class="nav-link" th:href="@{/audit}">Audit log</a></li>
+            <li sec:authorize="hasAuthority('STAFF_MANAGE')"><a class="nav-link" th:href="@{/admin/staff}">Staff &amp; permissions</a></li>
+        </ul>
+    </nav>
+</header>
+
+<span th:fragment="badge" id="notif-badge" hx-get="/notifications/badge" hx-trigger="every 60s" hx-swap="outerHTML">
+    <span th:if="${unreadCount != null and unreadCount > 0}"
+          class="absolute -top-0.5 -right-0.5 min-w-[1.25rem] h-5 px-1 rounded-full bg-rose-600 text-white text-xs font-semibold flex items-center justify-center"
+          th:text="${unreadCount > 99 ? '99+' : unreadCount}"
+          th:attr="aria-label=${unreadCount} + ' unread notifications'">3</span>
+</span>
+
+<span th:fragment="status(status)" class="chip" th:classappend="${@fmt.statusClass(status)}" th:text="${status.label()}">Status</span>
+
+<span th:fragment="priority" class="chip bg-rose-600 text-white" title="Priority">
+    <svg class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M3 3v14h2v-5h5l1 2h6V4h-5l-1-2H3z"/></svg>
+    Priority
+</span>
+
+</body>
+</html>

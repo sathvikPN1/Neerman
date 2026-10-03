@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Sign in')}"></head>
+<body>
+<main id="main" class="min-h-screen flex items-center justify-center px-4">
+    <div class="w-full max-w-sm">
+        <div class="text-center mb-6">
+            <span class="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-700 text-white text-xl font-bold" aria-hidden="true">N</span>
+            <h1 class="mt-3 text-xl font-semibold">Nirmaan Reimbursements</h1>
+            <p class="text-sm text-slate-600">Pre-incubator, IIT Madras</p>
+        </div>
+        <div class="card p-6">
+            <div th:if="${param.error}" role="alert" class="mb-4 rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-sm text-rose-900">Wrong email or password, or the account is not active.</div>
+            <div th:if="${param.locked}" role="alert" class="mb-4 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-900">Too many failed attempts. Try again in 15 minutes.</div>
+            <div th:if="${param.logout}" role="status" class="mb-4 rounded-lg bg-slate-50 border px-3 py-2 text-sm">You have signed out.</div>
+            <div th:if="${param.activated}" role="status" class="mb-4 rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2 text-sm text-emerald-900">Your password is set. Sign in to continue.</div>
+            <div th:if="${param.deactivated}" role="alert" class="mb-4 rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-sm text-rose-900">Your account is not active.</div>
+            <form th:action="@{/login}" method="post" class="space-y-4">
+                <div>
+                    <label class="label" for="username">Email</label>
+                    <input class="input" id="username" name="username" type="email" autocomplete="username" required autofocus>
+                </div>
+                <div>
+                    <label class="label" for="password">Password</label>
+                    <input class="input" id="password" name="password" type="password" autocomplete="current-password" required>
+                </div>
+                <button class="btn btn-primary w-full" type="submit">Sign in</button>
+            </form>
+        </div>
+    </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${status == 403 ? 'Not allowed' : (status == 404 ? 'Not found' : 'Error')})}"></head>
+<body>
+<div th:replace="~{fragments/layout :: nav}"></div>
+<main id="main" class="max-w-xl mx-auto px-4 py-12 text-center">
+    <p class="text-5xl font-bold text-slate-300" th:text="${status}">404</p>
+    <h1 class="mt-2 text-lg font-semibold" th:text="${status == 403 ? 'Not allowed' : (status == 404 ? 'Not found' : 'Something went wrong')}">Error</h1>
+    <p class="mt-2 text-slate-600" th:text="${message ?: 'Please try again.'}">Message</p>
+    <a th:href="@{/}" class="btn btn-primary mt-6">Go to my home page</a>
+</main>
+</body>
+</html>
