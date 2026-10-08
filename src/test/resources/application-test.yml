@@ -1,0 +1,16 @@
+app:
+  demo-data: false
+  mail:
+    mode: log
+  bootstrap:
+    coo-email: coo@test.local
+    coo-name: Test COO
+    coo-password: Coo-Password-1
+  permissions:
+    expiry-check-ms: 3600000
+spring:
+  thymeleaf:
+    cache: true
+logging:
+  level:
+    com.nirmaan: WARN

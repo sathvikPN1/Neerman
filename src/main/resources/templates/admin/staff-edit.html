@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${user.name()})}"></head>
+<body>
+<div th:replace="~{fragments/layout :: nav}"></div>
+<main id="main" class="max-w-3xl mx-auto px-4 py-6 space-y-6">
+    <div th:replace="~{fragments/flash :: flash}"></div>
+    <a th:href="@{/admin/staff}" class="text-sm text-indigo-700 underline">← Staff &amp; permissions</a>
+    <div>
+        <h1 class="text-2xl font-semibold" th:text="${user.name()}"></h1>
+        <p class="text-sm text-slate-600"><span th:text="${user.email()}"></span> · <span th:text="${user.role().label()}"></span></p>
+    </div>
+
+    <form th:action="@{/admin/staff/{id}/permissions(id=${user.id()})}" method="post" class="card p-4 space-y-3">
+        <fieldset>
+            <legend class="font-semibold">Permissions</legend>
+            <p class="hint">Tick what this person may do. Optionally set a last day (inclusive) — the permission then expires automatically, e.g. CLAIM_APPROVE while the COO is on leave. STAFF_MANAGE belongs to the COO only.</p>
+            <div class="divide-y mt-2">
+                <div th:each="p : ${grantable}" class="py-2 grid sm:grid-cols-[1fr_11rem] gap-2 items-center">
+                    <label class="flex items-start gap-2">
+                        <input type="checkbox" name="perm" th:value="${p}" th:checked="${held.contains(p)}" class="mt-1 h-4 w-4">
+                        <span><span class="font-mono text-sm" th:text="${p}"></span><br><span class="text-xs text-slate-600" th:text="${p.description()}"></span></span>
+                    </label>
+                    <div>
+                        <label class="sr-only" th:for="'exp-' + ${p}" th:text="'Last day for ' + ${p}"></label>
+                        <input class="input text-sm" type="date" th:id="'exp-' + ${p}" th:name="'expires_' + ${p}" th:value="${expiry[p.name()]}" th:min="${@fmt.today()}" aria-describedby="exp-hint">
+                    </div>
+                </div>
+            </div>
+            <p id="exp-hint" class="hint">Leave the date empty for no expiry.</p>
+        </fieldset>
+        <button class="btn btn-primary">Save permissions</button>
+    </form>
+
+    <section class="card p-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+            <h2 class="font-semibold" th:text="${user.active()} ? 'Deactivate user' : 'Reactivate user'"></h2>
+            <p class="text-sm text-slate-600" th:text="${user.active()} ? 'They are signed out immediately and can no longer sign in.' : 'They can sign in again with their existing permissions.'"></p>
+        </div>
+        <form th:if="${user.active()}" th:action="@{/admin/staff/{id}/deactivate(id=${user.id()})}" method="post" onsubmit="return confirm('Deactivate this user?')">
+            <button class="btn btn-danger">Deactivate</button>
+        </form>
+        <form th:unless="${user.active()}" th:action="@{/admin/staff/{id}/reactivate(id=${user.id()})}" method="post">
+            <button class="btn btn-ghost">Reactivate</button>
+        </form>
+    </section>
+</main>
+</body>
+</html>

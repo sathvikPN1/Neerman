@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head('Cohorts')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: nav}"></div>
+<main id="main" class="max-w-4xl mx-auto px-4 py-6 space-y-4">
+    <div th:replace="~{fragments/flash :: flash}"></div>
+    <h1 class="text-2xl font-semibold">Cohorts</h1>
+    <form sec:authorize="hasAuthority('COHORT_MANAGE')" th:action="@{/cohorts}" method="post" class="card p-4 grid sm:grid-cols-4 gap-2 items-end">
+        <div class="sm:col-span-2"><label class="label" for="name">New cohort name</label><input class="input" id="name" name="name" placeholder="Pratham Jan 2027" required></div>
+        <div><label class="label" for="startDate">Start</label><input class="input" id="startDate" name="startDate" type="date" required></div>
+        <div><label class="label" for="endDate">End</label><input class="input" id="endDate" name="endDate" type="date" required></div>
+        <button class="btn btn-primary sm:col-span-4 sm:justify-self-start">Create cohort</button>
+    </form>
+    <p th:if="${cohorts.isEmpty()}" class="card p-8 text-center text-slate-600">No cohorts yet.</p>
+    <ul class="space-y-2">
+        <li th:each="c : ${cohorts}" class="card p-3">
+            <details>
+                <summary class="flex justify-between gap-2"><span class="font-medium" th:text="${c.name()}"></span>
+                    <span class="text-sm text-slate-600" th:text="${@fmt.date(c.startDate())} + ' – ' + ${@fmt.date(c.endDate())} + ' · ' + ${c.teamCount()} + ' team(s)'"></span></summary>
+                <form sec:authorize="hasAuthority('COHORT_MANAGE')" th:action="@{/cohorts}" method="post" class="mt-3 grid sm:grid-cols-4 gap-2 items-end">
+                    <input type="hidden" name="id" th:value="${c.id()}">
+                    <div class="sm:col-span-2"><label class="label" th:for="'n' + ${c.id()}">Name</label><input class="input" th:id="'n' + ${c.id()}" name="name" th:value="${c.name()}" required></div>
+                    <div><label class="label" th:for="'s' + ${c.id()}">Start</label><input class="input" th:id="'s' + ${c.id()}" name="startDate" type="date" th:value="${c.startDate()}" required></div>
+                    <div><label class="label" th:for="'e' + ${c.id()}">End</label><input class="input" th:id="'e' + ${c.id()}" name="endDate" type="date" th:value="${c.endDate()}" required></div>
+                    <button class="btn btn-ghost">Save</button>
+                </form>
+            </details>
+        </li>
+    </ul>
+</main>
+</body>
+</html>

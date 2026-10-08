@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="decided" class="px-4 py-3 text-sm text-slate-700 bg-slate-50" role="status">
+    <strong th:text="${code}">NRM</strong> — <span th:text="${outcome}">Approved</span> ✓
+</div>
+
+<!-- One approval row: single line, tap to expand. -->
+<li th:fragment="row(a)" th:id="'row-' + ${a.row().id()}" class="bg-white">
+    <details>
+        <summary class="flex items-center gap-3 px-3 py-3 hover:bg-slate-50">
+            <input type="checkbox" name="selected" form="bulk-form" th:value="${a.row().id()} + ':' + ${a.row().version()}"
+                   class="h-5 w-5 shrink-0" th:disabled="${a.verifiedByMe() or a.exceedsBudget()}"
+                   th:attr="aria-label='Select ' + ${a.row().publicCode()}" onclick="event.stopPropagation()">
+            <div class="min-w-0 grow">
+                <p class="truncate font-medium"><span th:text="${a.row().teamName()}">Team</span>
+                    <span class="text-slate-500 font-normal" th:text="'· ' + ${a.row().categoryName()}"></span></p>
+                <p class="text-xs text-slate-500 truncate">
+                    <span th:text="${@fmt.age(a.row().stageEnteredAt())}"></span> ·
+                    <span th:text="'verified by ' + ${a.row().verifiedByName() ?: '—'}"></span>
+                    <span th:if="${a.exceedsBudget()}" class="text-rose-700 font-semibold">· over budget</span>
+                </p>
+            </div>
+            <div class="text-right shrink-0">
+                <p class="font-semibold" th:text="${@fmt.inr(a.row().claimedAmount())}">₹</p>
+                <th:block th:if="${a.row().priority()}"><span th:replace="~{fragments/layout :: priority}"></span></th:block>
+            </div>
+        </summary>
+        <div class="px-3 pb-4 space-y-3 border-t bg-slate-50/50">
+            <p class="pt-3 text-sm"><strong>Justification:</strong> <span th:text="${a.justification()}"></span></p>
+            <p th:if="${a.row().priorityReason() != null}" class="text-sm text-rose-800"><strong>Priority:</strong> <span th:text="${a.row().priorityReason()}"></span></p>
+            <div class="flex gap-3 items-start">
+                <a th:if="${a.invoiceDocumentId() != null}" th:href="@{/documents/{id}(id=${a.invoiceDocumentId()})}" target="_blank" rel="noopener"
+                   class="block w-24 h-28 shrink-0 rounded border bg-white overflow-hidden text-xs text-center text-indigo-700">
+                    <img th:if="${a.invoiceIsImage()}" th:src="@{/documents/{id}(id=${a.invoiceDocumentId()})}" alt="Invoice thumbnail" class="w-full h-full object-cover" loading="lazy">
+                    <span th:unless="${a.invoiceIsImage()}" class="flex h-full items-center justify-center p-1">📄 Open invoice (PDF)</span>
+                </a>
+                <dl th:if="${a.budget() != null}" class="text-xs grid grid-cols-2 gap-x-3 gap-y-1">
+                    <dt class="text-slate-500">Budget</dt><dd th:text="${@fmt.inr(a.budget().total())}"></dd>
+                    <dt class="text-slate-500">Remaining now</dt><dd th:text="${@fmt.inr(a.budget().remaining())}"></dd>
+                    <dt class="text-slate-500">After approval</dt>
+                    <dd th:classappend="${a.exceedsBudget()} ? 'text-rose-700 font-semibold'" th:text="${@fmt.inr(a.budget().remaining().subtract(a.row().claimedAmount()))}"></dd>
+                </dl>
+            </div>
+            <p th:if="${a.verifiedByMe()}" class="text-sm text-amber-800">You verified this claim, so someone else must approve it.</p>
+            <div th:unless="${a.verifiedByMe()}" class="flex flex-wrap gap-2" th:with="target='#row-' + ${a.row().id()}">
+                <form th:unless="${a.exceedsBudget()}" th:action="@{/coo/approvals/{id}/approve(id=${a.row().id()})}" method="post"
+                      th:attr="hx-post=@{/coo/approvals/{id}/approve(id=${a.row().id()})},hx-target=${target}" hx-swap="innerHTML">
+                    <input type="hidden" name="version" th:value="${a.row().version()}"><input type="hidden" name="code" th:value="${a.row().publicCode()}">
+                    <button class="btn btn-success">Approve</button>
+                </form>
+                <a th:href="@{/claims/{id}(id=${a.row().id()})}" class="btn btn-ghost">Open</a>
+            </div>
+            <div th:unless="${a.verifiedByMe()}" class="grid sm:grid-cols-3 gap-2" th:with="target='#row-' + ${a.row().id()}">
+                <form th:action="@{/coo/approvals/{id}/approve(id=${a.row().id()})}" method="post" class="space-y-1"
+                      th:attr="hx-post=@{/coo/approvals/{id}/approve(id=${a.row().id()})},hx-target=${target}" hx-swap="innerHTML">
+                    <input type="hidden" name="version" th:value="${a.row().version()}"><input type="hidden" name="code" th:value="${a.row().publicCode()}">
+                    <label class="label text-xs" th:for="'amt-' + ${a.row().id()}">Partial amount (₹)</label>
+                    <input class="input" th:id="'amt-' + ${a.row().id()}" name="approvedAmount" inputmode="decimal" required
+                           th:value="${a.exceedsBudget() and a.budget().remaining().signum() > 0} ? ${a.budget().remaining()} : ''">
+                    <input class="input" name="comment" placeholder="Reason" required aria-label="Reason for partial approval">
+                    <button class="btn btn-success w-full">Approve partially</button>
+                </form>
+                <form th:action="@{/coo/approvals/{id}/return(id=${a.row().id()})}" method="post" class="space-y-1"
+                      th:attr="hx-post=@{/coo/approvals/{id}/return(id=${a.row().id()})},hx-target=${target}" hx-swap="innerHTML">
+                    <input type="hidden" name="version" th:value="${a.row().version()}"><input type="hidden" name="code" th:value="${a.row().publicCode()}">
+                    <label class="label text-xs" th:for="'ret-' + ${a.row().id()}">Return reason</label>
+                    <input class="input" th:id="'ret-' + ${a.row().id()}" name="comment" required>
+                    <button class="btn btn-warn w-full">Return</button>
+                </form>
+                <form th:action="@{/coo/approvals/{id}/reject(id=${a.row().id()})}" method="post" class="space-y-1"
+                      th:attr="hx-post=@{/coo/approvals/{id}/reject(id=${a.row().id()})},hx-target=${target}" hx-swap="innerHTML">
+                    <input type="hidden" name="version" th:value="${a.row().version()}"><input type="hidden" name="code" th:value="${a.row().publicCode()}">
+                    <label class="label text-xs" th:for="'rej-' + ${a.row().id()}">Reject reason</label>
+                    <input class="input" th:id="'rej-' + ${a.row().id()}" name="comment" required>
+                    <button class="btn btn-danger w-full">Reject</button>
+                </form>
+            </div>
+        </div>
+    </details>
+</li>
+</body>
+</html>

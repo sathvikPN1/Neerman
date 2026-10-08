@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Payments')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: nav}"></div>
+<main id="main" class="max-w-5xl mx-auto px-4 py-6 space-y-4">
+    <div th:replace="~{fragments/flash :: flash}"></div>
+    <h1 class="text-2xl font-semibold">Payment queue</h1>
+    <p class="text-sm text-slate-600">Approved claims waiting for payment, priority first. Bank details and batch payouts arrive in the next release.</p>
+
+    <div th:if="${rows.isEmpty()}" class="card p-10 text-center text-slate-600">No approved claims waiting for payment.</div>
+
+    <ul class="space-y-3">
+        <li th:each="r : ${rows}" class="card p-4" th:classappend="${r.priority()} ? 'border-rose-300'">
+            <div class="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                    <a class="font-semibold text-indigo-700 underline" th:href="@{/claims/{id}(id=${r.id()})}" th:text="${r.publicCode()}"></a>
+                    <th:block th:if="${r.priority()}"><span th:replace="~{fragments/layout :: priority}"></span></th:block>
+                    <p class="text-sm text-slate-600"><span th:text="${r.teamName()}"></span> · <span th:text="${r.vendorName()}"></span> ·
+                        approved <span th:text="${@fmt.age(r.stageEnteredAt())}"></span> ago</p>
+                </div>
+                <p class="text-lg font-semibold" th:text="${@fmt.inr(r.approvedAmount())}">₹</p>
+            </div>
+            <form th:action="@{/finance/payments/{id}(id=${r.id()})}" method="post" class="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-2 items-end">
+                <input type="hidden" name="version" th:value="${r.version()}">
+                <div><label class="label" th:for="'paidOn-' + ${r.id()}">Paid on</label>
+                    <input class="input" type="date" name="paidOn" th:id="'paidOn-' + ${r.id()}" th:value="${@fmt.today()}" th:max="${@fmt.today()}" required></div>
+                <div><label class="label" th:for="'mode-' + ${r.id()}">Mode</label>
+                    <select class="input" name="mode" th:id="'mode-' + ${r.id()}"><option th:each="m : ${modes}" th:value="${m}" th:text="${m}"></option></select></div>
+                <div><label class="label" th:for="'utr-' + ${r.id()}">UTR / reference</label>
+                    <input class="input" name="utr" th:id="'utr-' + ${r.id()}" maxlength="40" required></div>
+                <button class="btn btn-success">Mark as paid</button>
+            </form>
+        </li>
+    </ul>
+</main>
+</body>
+</html>

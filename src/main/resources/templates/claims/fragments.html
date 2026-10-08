@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="warnings" id="warnings" aria-live="polite" class="space-y-2">
+    <div th:each="w : ${warnings}" role="alert"
+         th:class="${w.blocking()} ? 'rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-sm text-rose-900' : 'rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900'">
+        <strong th:text="${w.blocking()} ? 'Cannot submit: ' : 'Note: '"></strong><span th:text="${w.message()}"></span>
+    </div>
+</div>
+
+<div th:fragment="comments" id="comments-list">
+    <p th:if="${comments.isEmpty()}" class="text-sm text-slate-500">No messages yet. Ask a question or add context here instead of email.</p>
+    <ol class="space-y-3">
+        <li th:each="c : ${comments}" class="flex" th:classappend="${c.mine()} ? 'justify-end'">
+            <div class="max-w-[85%] rounded-xl px-3 py-2" th:classappend="${c.mine()} ? 'bg-indigo-50 border border-indigo-100' : 'bg-slate-50 border border-slate-200'">
+                <p class="text-xs text-slate-600"><strong th:text="${c.authorName()}">Name</strong>
+                    <span th:text="'· ' + ${c.authorRole()}"></span> · <time th:text="${@fmt.dateTime(c.createdAt())}"></time></p>
+                <p class="mt-1 whitespace-pre-line text-sm" th:text="${c.body()}">Message</p>
+            </div>
+        </li>
+    </ol>
+</div>
+</body>
+</html>

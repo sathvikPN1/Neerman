@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Claim')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: nav}"></div>
+<main id="main" class="max-w-3xl mx-auto px-4 py-6 space-y-6" th:with="errs=${errors ?: {:}}">
+    <div th:replace="~{fragments/flash :: flash}"></div>
+    <div class="flex items-center justify-between gap-3">
+        <h1 class="text-2xl font-semibold" th:text="${claimId == null ? 'New claim' : 'Claim ' + claim.publicCode()}">New claim</h1>
+        <th:block th:if="${claim != null}"><span th:replace="~{fragments/layout :: status(${claim.status()})}"></span></th:block>
+    </div>
+
+    <div th:if="${claim != null and claim.status().name() == 'RETURNED'}" role="alert" class="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-amber-900">
+        <strong>Returned for changes:</strong> <span th:text="${claim.decisionReason()}"></span>
+        <p class="text-sm mt-1">Fix the details or documents below, then resubmit.</p>
+    </div>
+
+    <div th:if="${budget != null}" class="text-sm text-slate-600">Remaining budget: <strong class="text-slate-900" th:text="${@fmt.inr(budget.remaining())}"></strong>
+        <span th:if="${budget.pending().signum() > 0}" th:text="'(' + ${@fmt.inr(budget.pending())} + ' pending review)'"></span></div>
+
+    <form th:action="${claimId == null} ? @{/claims} : @{/claims/{id}(id=${claimId})}" method="post" class="card p-4 sm:p-6 space-y-4" novalidate>
+        <input type="hidden" name="version" th:value="${form.version()}">
+        <div th:replace="~{claims/fragments :: warnings}"></div>
+
+        <div>
+            <label class="label" for="categoryId">Category</label>
+            <select class="input" id="categoryId" name="categoryId" required
+                    hx-post="/claims/warnings" hx-trigger="change" hx-target="#warnings" hx-swap="outerHTML" hx-include="#claimedAmount">
+                <option value="">Choose a category…</option>
+                <optgroup label="Reimbursable">
+                    <option th:each="c : ${categories}" th:if="${c.allowed()}" th:value="${c.id()}" th:text="${c.name()} + (${c.requiresPreApproval()} ? ' (pre-approval required)' : '')"
+                            th:selected="${form.categoryId() == c.id()}"></option>
+                </optgroup>
+                <optgroup label="Not reimbursable">
+                    <option th:each="c : ${categories}" th:unless="${c.allowed()}" th:value="${c.id()}" th:text="${c.name()}"
+                            th:selected="${form.categoryId() == c.id()}"></option>
+                </optgroup>
+            </select>
+            <p class="field-error" th:if="${errs['categoryId']}" th:text="${errs['categoryId']}"></p>
+        </div>
+
+        <div class="grid sm:grid-cols-2 gap-4">
+            <div>
+                <label class="label" for="claimedAmount">Amount (₹)</label>
+                <input class="input" id="claimedAmount" name="claimedAmount" inputmode="decimal" th:value="${form.claimedAmount()}" required
+                       hx-post="/claims/warnings" hx-trigger="keyup changed delay:500ms" hx-target="#warnings" hx-swap="outerHTML" hx-include="#categoryId">
+                <p class="field-error" th:if="${errs['claimedAmount']}" th:text="${errs['claimedAmount']}"></p>
+            </div>
+            <div>
+                <label class="label" for="expenseDate">Expense date</label>
+                <input class="input" id="expenseDate" name="expenseDate" type="date" th:value="${form.expenseDate()}" th:max="${@fmt.today()}" required>
+                <p class="field-error" th:if="${errs['expenseDate']}" th:text="${errs['expenseDate']}"></p>
+            </div>
+        </div>
+
+        <div class="grid sm:grid-cols-2 gap-4">
+            <div>
+                <label class="label" for="vendorName">Vendor / seller</label>
+                <input class="input" id="vendorName" name="vendorName" th:value="${form.vendorName()}" maxlength="200" required>
+                <p class="field-error" th:if="${errs['vendorName']}" th:text="${errs['vendorName']}"></p>
+            </div>
+            <div>
+                <label class="label" for="vendorGstin">Vendor GSTIN <span class="font-normal text-slate-500">(optional)</span></label>
+                <input class="input uppercase" id="vendorGstin" name="vendorGstin" th:value="${form.vendorGstin()}" maxlength="15" placeholder="33ABCDE1234F1Z5">
+                <p class="field-error" th:if="${errs['vendorGstin']}" th:text="${errs['vendorGstin']}"></p>
+            </div>
+        </div>
+
+        <div class="grid sm:grid-cols-2 gap-4">
+            <div>
+                <label class="label" for="invoiceNumber">Invoice number</label>
+                <input class="input" id="invoiceNumber" name="invoiceNumber" th:value="${form.invoiceNumber()}" maxlength="60">
+            </div>
+            <div>
+                <label class="label" for="invoiceDate">Invoice date</label>
+                <input class="input" id="invoiceDate" name="invoiceDate" type="date" th:value="${form.invoiceDate()}">
+            </div>
+        </div>
+
+        <div>
+            <label class="label" for="justification">How does this expense benefit your project?</label>
+            <textarea class="input" id="justification" name="justification" rows="4" maxlength="2000" required th:text="${form.justification()}"></textarea>
+            <p class="hint">Required by the Nirmaan guide. Be specific: what you bought and how it moves the product forward.</p>
+            <p class="field-error" th:if="${errs['justification']}" th:text="${errs['justification']}"></p>
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+            <button class="btn btn-primary" type="submit" th:text="${claimId == null ? 'Save draft & add documents' : 'Save changes'}">Save</button>
+            <a th:href="@{/team}" class="btn btn-ghost">Cancel</a>
+        </div>
+    </form>
+
+    <!-- Documents and submit: only once the draft exists. -->
+    <section th:if="${claim != null}" class="card p-4 sm:p-6 space-y-4" aria-labelledby="docs-title">
+        <h2 id="docs-title" class="font-semibold">Documents</h2>
+        <p class="text-sm text-slate-600">Upload the <strong>invoice</strong> (a real tax invoice — pro-forma invoices are not accepted) and the
+            <strong>payment proof</strong> (UPI screenshot, bank statement extract or card slip). PDF, JPG, PNG or HEIC, up to 10 MB each.</p>
+        <ul class="divide-y divide-slate-200 border rounded-lg" th:unless="${claim.documents().isEmpty()}">
+            <li th:each="d : ${claim.documents()}" class="flex items-center justify-between gap-3 px-3 py-2">
+                <div class="min-w-0">
+                    <p class="text-sm font-medium truncate"><a class="text-indigo-700 underline" th:href="@{/documents/{id}(id=${d.id()})}" target="_blank" rel="noopener" th:text="${d.originalFilename()}"></a></p>
+                    <p class="text-xs text-slate-500" th:text="${d.type().label()} + ' · ' + ${d.sizeLabel()}"></p>
+                </div>
+                <form th:action="@{/claims/{c}/documents/{d}/delete(c=${claim.id()},d=${d.id()})}" method="post">
+                    <button class="text-sm text-rose-700 underline">Remove</button>
+                </form>
+            </li>
+        </ul>
+        <form th:action="@{/claims/{id}/documents(id=${claim.id()})}" method="post" enctype="multipart/form-data" class="grid sm:grid-cols-[12rem_1fr_auto] gap-2 items-end">
+            <div>
+                <label class="label" for="type">Document type</label>
+                <select class="input" id="type" name="type">
+                    <option value="INVOICE">Invoice</option>
+                    <option value="PAYMENT_PROOF">Payment proof</option>
+                    <option value="OTHER">Other attachment</option>
+                </select>
+            </div>
+            <div>
+                <label class="label" for="file">File</label>
+                <input class="input" id="file" name="file" type="file" accept=".pdf,.jpg,.jpeg,.png,.heic,application/pdf,image/*" required>
+            </div>
+            <button class="btn btn-ghost" type="submit">Upload</button>
+        </form>
+
+        <div class="border-t pt-4 flex flex-wrap items-center gap-3">
+            <form th:action="@{/claims/{id}/actions/submit(id=${claim.id()})}" method="post">
+                <input type="hidden" name="version" th:value="${claim.version()}">
+                <button class="btn btn-success" th:text="${claim.status().name() == 'RETURNED'} ? 'Resubmit claim' : 'Submit claim'">Submit claim</button>
+            </form>
+            <form th:if="${claim.status().name() == 'DRAFT' and claim.submittedAt() == null}" th:action="@{/claims/{id}/delete(id=${claim.id()})}" method="post"
+                  onsubmit="return confirm('Delete this draft?')">
+                <button class="btn btn-ghost text-rose-700">Delete draft</button>
+            </form>
+            <a th:href="@{/claims/{id}(id=${claim.id()})}" class="text-sm text-indigo-700 underline">View history &amp; messages</a>
+        </div>
+    </section>
+</main>
+</body>
+</html>

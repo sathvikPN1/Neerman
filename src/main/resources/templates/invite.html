@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Set your password')}"></head>
+<body>
+<main id="main" class="min-h-screen flex items-center justify-center px-4">
+    <div class="w-full max-w-sm card p-6">
+        <h1 class="text-lg font-semibold mb-4">Set your password</h1>
+        <div th:unless="${valid}" role="alert" class="rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-sm text-rose-900">
+            This invitation link is invalid, already used or expired. Ask Nirmaan to send a new one.
+        </div>
+        <form th:if="${valid}" th:action="@{/invite/{t}(t=${token})}" method="post" class="space-y-4">
+            <div th:if="${error}" role="alert" class="rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-sm text-rose-900" th:text="${error}"></div>
+            <div>
+                <label class="label" for="password">New password</label>
+                <input class="input" id="password" name="password" type="password" minlength="10" autocomplete="new-password" required>
+                <p class="hint">At least 10 characters.</p>
+            </div>
+            <div>
+                <label class="label" for="confirm">Confirm password</label>
+                <input class="input" id="confirm" name="confirm" type="password" minlength="10" autocomplete="new-password" required>
+            </div>
+            <button class="btn btn-primary w-full">Activate account</button>
+        </form>
+    </div>
+</main>
+</body>
+</html>

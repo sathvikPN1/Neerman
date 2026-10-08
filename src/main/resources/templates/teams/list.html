@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head('Teams')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: nav}"></div>
+<main id="main" class="max-w-6xl mx-auto px-4 py-6 space-y-4">
+    <div th:replace="~{fragments/flash :: flash}"></div>
+    <div class="flex items-center justify-between">
+        <h1 class="text-2xl font-semibold">Teams</h1>
+        <a sec:authorize="hasAuthority('TEAM_MANAGE')" th:href="@{/teams/new}" class="btn btn-primary">+ New team</a>
+    </div>
+    <div th:if="${teams.isEmpty()}" class="card p-10 text-center text-slate-600">No teams yet. Create a cohort first, then add teams.</div>
+    <div th:unless="${teams.isEmpty()}" class="card overflow-x-auto">
+        <table class="table w-full text-sm">
+            <thead><tr><th>Team</th><th>Program</th><th class="text-right">Budget</th><th class="text-right">Approved + paid</th><th class="text-right">Pending</th><th class="text-right">Remaining</th></tr></thead>
+            <tbody>
+            <tr th:each="t : ${teams}">
+                <td><a class="font-medium text-indigo-700 underline" th:href="@{/teams/{id}(id=${t.id()})}" th:text="${t.name()}"></a>
+                    <th:block th:if="${t.priority()}"><span th:replace="~{fragments/layout :: priority}"></span></th:block>
+                    <div class="text-xs text-slate-500" th:text="${t.cohortName()} + ' · ' + ${t.memberCount()} + ' member(s)'"></div></td>
+                <td th:text="${t.program().label()}"></td>
+                <td class="text-right" th:text="${@fmt.inr(t.budget().total())}"></td>
+                <td class="text-right" th:text="${@fmt.inr(t.budget().committed())}"></td>
+                <td class="text-right" th:text="${@fmt.inr(t.budget().pending())}"></td>
+                <td class="text-right font-semibold" th:text="${@fmt.inr(t.budget().remaining())}"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+</body>
+</html>

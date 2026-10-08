@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Team')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: nav}"></div>
+<main id="main" class="max-w-xl mx-auto px-4 py-6 space-y-4" th:with="errs=${errors ?: {:}}">
+    <div th:replace="~{fragments/flash :: flash}"></div>
+    <h1 class="text-2xl font-semibold" th:text="${form.id() == null ? 'New team' : 'Edit team'}"></h1>
+    <div th:if="${cohorts.isEmpty()}" class="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-amber-900">
+        Create a cohort first. <a th:href="@{/cohorts}" class="underline">Go to cohorts</a>
+    </div>
+    <form th:action="@{/teams}" method="post" class="card p-4 space-y-4">
+        <input type="hidden" name="id" th:value="${form.id()}">
+        <div><label class="label" for="name">Team name</label>
+            <input class="input" id="name" name="name" th:value="${form.name()}" required maxlength="120">
+            <p class="field-error" th:if="${errs['name']}" th:text="${errs['name']}"></p></div>
+        <div><label class="label" for="cohortId">Cohort</label>
+            <select class="input" id="cohortId" name="cohortId" required>
+                <option value="">Choose…</option>
+                <option th:each="c : ${cohorts}" th:value="${c.id()}" th:text="${c.name()}" th:selected="${form.cohortId() == c.id()}"></option>
+            </select>
+            <p class="field-error" th:if="${errs['cohortId']}" th:text="${errs['cohortId']}"></p></div>
+        <div><label class="label" for="program">Program</label>
+            <select class="input" id="program" name="program">
+                <option th:each="p : ${programs}" th:value="${p}" th:text="${p.label()}" th:selected="${form.program() == p}"></option>
+            </select>
+            <p class="hint">Changing Pratham → Akshar here updates the budget; the change is kept in the audit log.</p></div>
+        <div><label class="label" for="budgetAmount">Budget (₹)</label>
+            <input class="input" id="budgetAmount" name="budgetAmount" inputmode="decimal" th:value="${form.budgetAmount()}">
+            <p class="hint">Leave empty for the program default: Pratham <span th:text="${@fmt.inr(prathamDefault)}"></span>, Akshar <span th:text="${@fmt.inr(aksharDefault)}"></span>.</p>
+            <p class="field-error" th:if="${errs['budgetAmount']}" th:text="${errs['budgetAmount']}"></p></div>
+        <button class="btn btn-primary">Save team</button>
+    </form>
+</main>
+</body>
+</html>

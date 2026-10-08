@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Notifications')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: nav}"></div>
+<main id="main" class="max-w-3xl mx-auto px-4 py-6 space-y-4">
+    <div class="flex items-center justify-between">
+        <h1 class="text-2xl font-semibold">Notifications</h1>
+        <form th:if="${unreadCount > 0}" th:action="@{/notifications/read-all}" method="post"><button class="btn btn-ghost">Mark all read</button></form>
+    </div>
+    <p th:if="${notifications.isEmpty()}" class="card p-10 text-center text-slate-600">You're all caught up.</p>
+    <ul class="card divide-y" th:unless="${notifications.isEmpty()}">
+        <li th:each="n : ${notifications}">
+            <a th:href="@{/notifications/{id}/open(id=${n.id()})}" class="flex gap-3 px-4 py-3 hover:bg-slate-50">
+                <span class="mt-1.5 h-2 w-2 rounded-full shrink-0" th:classappend="${n.read()} ? 'bg-transparent' : 'bg-indigo-600'" aria-hidden="true"></span>
+                <span><span th:classappend="${n.read()} ? 'text-slate-600' : 'font-medium'" th:text="${n.message()}"></span>
+                    <span class="sr-only" th:unless="${n.read()}">(unread)</span>
+                    <span class="block text-xs text-slate-500" th:text="${@fmt.dateTime(n.createdAt())}"></span></span>
+            </a>
+        </li>
+    </ul>
+</main>
+</body>
+</html>

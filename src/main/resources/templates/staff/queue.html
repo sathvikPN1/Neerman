@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Verification queue')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: nav}"></div>
+<main id="main" class="max-w-6xl mx-auto px-4 py-6 space-y-4">
+    <div th:replace="~{fragments/flash :: flash}"></div>
+    <h1 class="text-2xl font-semibold">Verification queue</h1>
+
+    <form method="get" class="card p-3 grid grid-cols-2 md:grid-cols-6 gap-2 items-end" aria-label="Filters">
+        <div><label class="label" for="status">Status</label>
+            <select class="input" id="status" name="status">
+                <option value="">Submitted (default)</option>
+                <option th:each="s : ${statuses}" th:value="${s}" th:text="${s.label()}" th:selected="${filter.status() == s}"></option>
+            </select></div>
+        <div><label class="label" for="teamId">Team</label>
+            <select class="input" id="teamId" name="teamId"><option value="">All</option>
+                <option th:each="t : ${teams}" th:value="${t.id()}" th:text="${t.name()}" th:selected="${filter.teamId() == t.id()}"></option></select></div>
+        <div><label class="label" for="cohortId">Cohort</label>
+            <select class="input" id="cohortId" name="cohortId"><option value="">All</option>
+                <option th:each="c : ${cohorts}" th:value="${c.id()}" th:text="${c.name()}" th:selected="${filter.cohortId() == c.id()}"></option></select></div>
+        <div><label class="label" for="categoryId">Category</label>
+            <select class="input" id="categoryId" name="categoryId"><option value="">All</option>
+                <option th:each="c : ${categories}" th:value="${c.id()}" th:text="${c.name()}" th:selected="${filter.categoryId() == c.id()}"></option></select></div>
+        <div><label class="label" for="minAgeDays">Waiting at least</label>
+            <select class="input" id="minAgeDays" name="minAgeDays"><option value="">Any time</option>
+                <option th:each="d : ${ {2, 5, 10} }" th:value="${d}" th:text="${d} + ' days'" th:selected="${filter.minAgeDays() == d}"></option></select></div>
+        <button class="btn btn-primary">Apply</button>
+    </form>
+
+    <div th:if="${rows.isEmpty()}" class="card p-10 text-center text-slate-600">
+        <p class="font-medium">Nothing waiting here. 🎉</p>
+        <p class="text-sm">New submissions will appear automatically, priority claims first.</p>
+    </div>
+
+    <div th:unless="${rows.isEmpty()}" class="card overflow-x-auto">
+        <table class="table w-full text-sm">
+            <thead><tr><th>Claim</th><th>Team</th><th>Category</th><th class="text-right">Amount</th><th>Waiting</th><th>Status</th></tr></thead>
+            <tbody>
+            <tr th:each="r : ${rows}" th:classappend="${r.priority()} ? 'bg-rose-50/50'">
+                <td><a class="text-indigo-700 underline font-medium" th:href="@{/claims/{id}(id=${r.id()})}" th:text="${r.publicCode()}"></a>
+                    <div class="text-xs text-slate-500" th:text="${r.vendorName()}"></div>
+                    <th:block th:if="${r.priority()}"><span th:replace="~{fragments/layout :: priority}"></span></th:block>
+                    <span th:if="${r.priorityRequested()}" class="chip bg-amber-100 text-amber-900">Priority requested</span></td>
+                <td><span th:text="${r.teamName()}"></span><div class="text-xs text-slate-500" th:text="${r.cohortName()}"></div></td>
+                <td th:text="${r.categoryName()}"></td>
+                <td class="text-right font-semibold" th:text="${@fmt.inr(r.claimedAmount())}"></td>
+                <td th:text="${@fmt.age(r.stageEnteredAt())}"></td>
+                <td><span th:replace="~{fragments/layout :: status(${r.status()})}"></span></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+</body>
+</html>

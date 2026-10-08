@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head('Categories')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: nav}"></div>
+<main id="main" class="max-w-4xl mx-auto px-4 py-6 space-y-4">
+    <div th:replace="~{fragments/flash :: flash}"></div>
+    <h1 class="text-2xl font-semibold">Expense categories</h1>
+    <p class="text-sm text-slate-600">From the Nirmaan Student Guide. Every claim needs a real invoice (not pro-forma), a payment proof and a justification of how it benefits your project.</p>
+
+    <ul class="space-y-2">
+        <li th:each="c : ${categories}" class="card p-4" th:classappend="${!c.active()} ? 'opacity-60'">
+            <div class="flex flex-wrap items-center gap-2">
+                <h2 class="font-semibold" th:text="${c.name()}"></h2>
+                <span th:if="${c.allowed()}" class="chip bg-emerald-100 text-emerald-800">Reimbursable</span>
+                <span th:unless="${c.allowed()}" class="chip bg-rose-100 text-rose-800">Not reimbursable</span>
+                <span th:if="${c.requiresPreApproval()}" class="chip bg-amber-100 text-amber-900">Pre-approval required</span>
+                <span th:if="${c.preApprovalRecommended()}" class="chip bg-sky-100 text-sky-800">Pre-approval recommended</span>
+                <span th:if="${c.justificationRequired()}" class="chip bg-slate-100 text-slate-700">Detailed justification</span>
+                <span th:unless="${c.active()}" class="chip bg-slate-200">Inactive</span>
+            </div>
+            <p class="text-sm text-slate-700 mt-1" th:text="${c.description()}"></p>
+            <details sec:authorize="hasAuthority('CATEGORY_MANAGE')" class="mt-2">
+                <summary class="text-sm text-indigo-700 underline">Edit</summary>
+                <form th:replace="~{categories/list :: categoryForm(${c})}"></form>
+            </details>
+        </li>
+    </ul>
+
+    <section sec:authorize="hasAuthority('CATEGORY_MANAGE')" class="card p-4">
+        <h2 class="font-semibold">Add a category</h2>
+        <form th:replace="~{categories/list :: categoryForm(null)}"></form>
+    </section>
+</main>
+
+<form th:fragment="categoryForm(c)" th:action="@{/categories}" method="post" class="mt-3 grid gap-2"
+      th:with="p=${c == null ? 'new' : c.id()}">
+    <input type="hidden" name="id" th:value="${c?.id()}">
+    <div><label class="label" th:for="'name-' + ${p}">Name</label><input class="input" th:id="'name-' + ${p}" name="name" th:value="${c?.name()}" required></div>
+    <div><label class="label" th:for="'desc-' + ${p}">Rule / description shown to teams</label>
+        <textarea class="input" th:id="'desc-' + ${p}" name="description" rows="2" required th:text="${c?.description()}"></textarea></div>
+    <div class="flex flex-wrap gap-4 text-sm">
+        <label class="flex items-center gap-2"><input type="checkbox" name="allowed" value="true" th:checked="${c == null or c.allowed()}"> Reimbursable</label>
+        <label class="flex items-center gap-2"><input type="checkbox" name="requiresPreApproval" value="true" th:checked="${c?.requiresPreApproval()}"> Requires pre-approval</label>
+        <label class="flex items-center gap-2"><input type="checkbox" name="preApprovalRecommended" value="true" th:checked="${c?.preApprovalRecommended()}"> Pre-approval recommended</label>
+        <label class="flex items-center gap-2"><input type="checkbox" name="justificationRequired" value="true" th:checked="${c?.justificationRequired()}"> Detailed justification</label>
+        <label class="flex items-center gap-2"><input type="checkbox" name="active" value="true" th:checked="${c == null or c.active()}"> Active</label>
+    </div>
+    <div class="w-32"><label class="label" th:for="'sort-' + ${p}">Sort order</label><input class="input" th:id="'sort-' + ${p}" name="sortOrder" type="number" th:value="${c?.sortOrder() ?: 0}"></div>
+    <button class="btn btn-primary justify-self-start">Save category</button>
+</form>
+</body>
+</html>

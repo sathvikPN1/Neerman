@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head('Approvals')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: nav}"></div>
+<main id="main" class="max-w-3xl mx-auto px-2 sm:px-4 py-4 space-y-4">
+    <div class="px-2" th:replace="~{fragments/flash :: flash}"></div>
+    <div class="px-2 flex items-end justify-between gap-2">
+        <div>
+            <h1 class="text-2xl font-semibold">Approvals</h1>
+            <p class="text-sm text-slate-600"><span th:text="${count}">0</span> waiting · <span th:text="${@fmt.inr(total)}"></span></p>
+        </div>
+        <a sec:authorize="hasAnyAuthority('CLAIM_VERIFY','CLAIM_RETURN_REJECT')" th:href="@{/staff/queue}" class="text-sm text-indigo-700 underline">Full staff queue →</a>
+    </div>
+
+    <div th:if="${count == 0}" class="card p-10 text-center text-slate-600">
+        <p class="font-medium">All caught up. 🎉</p>
+        <p class="text-sm">Verified claims will appear here, priority first.</p>
+    </div>
+
+    <form id="bulk-form" th:action="@{/coo/approvals/bulk}" method="post" th:if="${count > 0}"
+          class="sticky top-[6.5rem] z-10 card px-3 py-2 flex items-center justify-between gap-2 shadow-sm"
+          onsubmit="return confirm('Approve all selected claims in full?')">
+        <label class="flex items-center gap-2 text-sm"><input type="checkbox" class="h-5 w-5" data-select-all="selected"> Select all</label>
+        <button class="btn btn-success">Approve selected</button>
+    </form>
+
+    <section th:unless="${priorityRows.isEmpty()}" aria-labelledby="prio-title">
+        <h2 id="prio-title" class="px-2 mb-1 text-sm font-semibold text-rose-700 uppercase tracking-wide">Priority</h2>
+        <ul class="card divide-y divide-slate-200 overflow-hidden border-rose-200">
+            <th:block th:each="a : ${priorityRows}"><li th:replace="~{coo/fragments :: row(${a})}"></li></th:block>
+        </ul>
+    </section>
+
+    <section th:unless="${otherRows.isEmpty()}" aria-labelledby="other-title">
+        <h2 id="other-title" class="px-2 mb-1 text-sm font-semibold text-slate-600 uppercase tracking-wide">Everything else</h2>
+        <ul class="card divide-y divide-slate-200 overflow-hidden">
+            <th:block th:each="a : ${otherRows}"><li th:replace="~{coo/fragments :: row(${a})}"></li></th:block>
+        </ul>
+    </section>
+    <p class="px-2 text-xs text-slate-500" th:if="${count > 0}">Rows you verified yourself or that exceed the team budget can't be bulk-approved; open them to decide.</p>
+</main>
+</body>
+</html>
