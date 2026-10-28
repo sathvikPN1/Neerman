@@ -21,7 +21,7 @@
             </div>
             <p class="text-sm text-slate-700 mt-1" th:text="${c.description()}"></p>
             <details sec:authorize="hasAuthority('CATEGORY_MANAGE')" class="mt-2">
-                <summary class="text-sm text-indigo-700 underline">Edit</summary>
+                <summary class="text-sm text-brand-700 underline">Edit</summary>
                 <form th:replace="~{categories/list :: categoryForm(${c})}"></form>
             </details>
         </li>

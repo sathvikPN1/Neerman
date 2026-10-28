@@ -12,7 +12,7 @@
             <h1 class="text-2xl font-semibold"><span th:text="${claim.vendorName()}">Vendor</span>
                 <span class="text-slate-500 font-normal" th:text="'· ' + ${@fmt.inr(claim.claimedAmount())}"></span></h1>
             <p class="text-sm text-slate-600">
-                <a th:if="${staffSide}" th:href="@{/teams/{id}(id=${claim.teamId()})}" class="text-indigo-700 underline" th:text="${claim.teamName()}">Team</a>
+                <a th:if="${staffSide}" th:href="@{/teams/{id}(id=${claim.teamId()})}" class="text-brand-700 underline" th:text="${claim.teamName()}">Team</a>
                 <span th:unless="${staffSide}" th:text="${claim.teamName()}">Team</span>
                 · <span th:text="${claim.categoryName()}">Category</span>
             </p>
@@ -30,7 +30,7 @@
         <span th:text="${claim.decisionReason()}"></span>
     </div>
 
-    <div th:if="${claim.editable()}" class="rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+    <div th:if="${claim.editable()}" class="rounded-lg border border-brand-200 bg-brand-50 px-4 py-3 flex flex-wrap items-center justify-between gap-2">
         <span th:text="${claim.status().name() == 'RETURNED'} ? 'This claim was returned. Edit it and resubmit.' : 'This claim is a draft. Add documents and submit it.'"></span>
         <a th:href="@{/claims/{id}/edit(id=${claim.id()})}" class="btn btn-primary">Edit &amp; submit</a>
     </div>
@@ -175,7 +175,7 @@
             <div th:each="d, s : ${claim.documents()}" class="card overflow-hidden">
                 <div class="flex items-center justify-between px-3 py-2 border-b bg-slate-50">
                     <p class="text-sm"><strong th:text="${d.type().label()}"></strong> · <span th:text="${d.originalFilename()}"></span></p>
-                    <a class="text-sm text-indigo-700 underline" th:href="@{/documents/{id}(id=${d.id()},download=true)}">Download</a>
+                    <a class="text-sm text-brand-700 underline" th:href="@{/documents/{id}(id=${d.id()},download=true)}">Download</a>
                 </div>
                 <iframe th:if="${d.isPdf()}" th:src="@{/documents/{id}(id=${d.id()})}" class="w-full h-[28rem] bg-white" th:title="${d.type().label()} + ' preview'"></iframe>
                 <img th:if="${d.isImage()}" th:src="@{/documents/{id}(id=${d.id()})}" th:alt="${d.type().label()}" class="w-full object-contain max-h-[28rem] bg-white" loading="lazy">
@@ -202,7 +202,7 @@
             <h2 id="timeline-title" class="font-semibold mb-3">History</h2>
             <ol class="relative border-l border-slate-200 ml-2 space-y-4">
                 <li th:each="e : ${claim.timeline()}" class="ml-4">
-                    <span class="absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full border border-white bg-indigo-500" aria-hidden="true"></span>
+                    <span class="absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full border border-white bg-brand-500" aria-hidden="true"></span>
                     <p class="text-sm"><strong th:text="${@fmt.humanise(e.action())}">Submitted</strong>
                         <span class="text-slate-600" th:text="'by ' + ${e.actorName()}"></span>
                         <span th:if="${e.onBehalfOfName() != null}" class="text-slate-600" th:text="'(on behalf of ' + ${e.onBehalfOfName()} + ')'"></span></p>

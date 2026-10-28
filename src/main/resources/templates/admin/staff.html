@@ -30,14 +30,14 @@
                     <span th:unless="${u.active()}" class="chip bg-slate-200 text-slate-700">Deactivated</span></td>
                 <td th:text="${u.role().label()}"></td>
                 <td>
-                    <span th:if="${u.role().name() == 'COO'}" class="chip bg-indigo-100 text-indigo-800">All permissions</span>
+                    <span th:if="${u.role().name() == 'COO'}" class="chip bg-brand-100 text-brand-800">All permissions</span>
                     <span th:each="g : ${u.grants()}" class="chip bg-slate-100 text-slate-700 mr-1 mb-1"
                           th:text="${g.permission()} + (${g.expiresAt() != null} ? ' (until ' + ${@fmt.date(g.expiresAt().minusSeconds(1))} + ')' : '')"></span>
                 </td>
                 <td th:text="${u.lastActiveAt() == null ? 'Never' : @fmt.dateTime(u.lastActiveAt())}"></td>
                 <td class="whitespace-nowrap space-y-1">
                     <a th:unless="${u.role().name() == 'COO'}" th:href="@{/admin/staff/{id}(id=${u.id()})}" class="btn btn-ghost">Edit</a>
-                    <form th:if="${u.invitePending() and u.active()}" th:action="@{/admin/staff/{id}/resend-invite(id=${u.id()})}" method="post"><button class="text-xs text-indigo-700 underline">Resend invite</button></form>
+                    <form th:if="${u.invitePending() and u.active()}" th:action="@{/admin/staff/{id}/resend-invite(id=${u.id()})}" method="post"><button class="text-xs text-brand-700 underline">Resend invite</button></form>
                 </td>
             </tr>
             </tbody>

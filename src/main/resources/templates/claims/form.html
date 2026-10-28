@@ -98,7 +98,7 @@
         <ul class="divide-y divide-slate-200 border rounded-lg" th:unless="${claim.documents().isEmpty()}">
             <li th:each="d : ${claim.documents()}" class="flex items-center justify-between gap-3 px-3 py-2">
                 <div class="min-w-0">
-                    <p class="text-sm font-medium truncate"><a class="text-indigo-700 underline" th:href="@{/documents/{id}(id=${d.id()})}" target="_blank" rel="noopener" th:text="${d.originalFilename()}"></a></p>
+                    <p class="text-sm font-medium truncate"><a class="text-brand-700 underline" th:href="@{/documents/{id}(id=${d.id()})}" target="_blank" rel="noopener" th:text="${d.originalFilename()}"></a></p>
                     <p class="text-xs text-slate-500" th:text="${d.type().label()} + ' · ' + ${d.sizeLabel()}"></p>
                 </div>
                 <form th:action="@{/claims/{c}/documents/{d}/delete(c=${claim.id()},d=${d.id()})}" method="post">
@@ -131,7 +131,7 @@
                   onsubmit="return confirm('Delete this draft?')">
                 <button class="btn btn-ghost text-rose-700">Delete draft</button>
             </form>
-            <a th:href="@{/claims/{id}(id=${claim.id()})}" class="text-sm text-indigo-700 underline">View history &amp; messages</a>
+            <a th:href="@{/claims/{id}(id=${claim.id()})}" class="text-sm text-brand-700 underline">View history &amp; messages</a>
         </div>
     </section>
 </main>

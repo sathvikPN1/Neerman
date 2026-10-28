@@ -31,7 +31,7 @@
             <p th:if="${a.row().priorityReason() != null}" class="text-sm text-rose-800"><strong>Priority:</strong> <span th:text="${a.row().priorityReason()}"></span></p>
             <div class="flex gap-3 items-start">
                 <a th:if="${a.invoiceDocumentId() != null}" th:href="@{/documents/{id}(id=${a.invoiceDocumentId()})}" target="_blank" rel="noopener"
-                   class="block w-24 h-28 shrink-0 rounded border bg-white overflow-hidden text-xs text-center text-indigo-700">
+                   class="block w-24 h-28 shrink-0 rounded border bg-white overflow-hidden text-xs text-center text-brand-700">
                     <img th:if="${a.invoiceIsImage()}" th:src="@{/documents/{id}(id=${a.invoiceDocumentId()})}" alt="Invoice thumbnail" class="w-full h-full object-cover" loading="lazy">
                     <span th:unless="${a.invoiceIsImage()}" class="flex h-full items-center justify-center p-1">📄 Open invoice (PDF)</span>
                 </a>

@@ -14,7 +14,7 @@
         <li th:each="r : ${rows}" class="card p-4" th:classappend="${r.priority()} ? 'border-rose-300'">
             <div class="flex flex-wrap items-start justify-between gap-2">
                 <div>
-                    <a class="font-semibold text-indigo-700 underline" th:href="@{/claims/{id}(id=${r.id()})}" th:text="${r.publicCode()}"></a>
+                    <a class="font-semibold text-brand-700 underline" th:href="@{/claims/{id}(id=${r.id()})}" th:text="${r.publicCode()}"></a>
                     <th:block th:if="${r.priority()}"><span th:replace="~{fragments/layout :: priority}"></span></th:block>
                     <p class="text-sm text-slate-600"><span th:text="${r.teamName()}"></span> · <span th:text="${r.vendorName()}"></span> ·
                         approved <span th:text="${@fmt.age(r.stageEnteredAt())}"></span> ago</p>

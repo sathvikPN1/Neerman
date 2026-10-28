@@ -15,7 +15,7 @@
             <thead><tr><th>Team</th><th>Program</th><th class="text-right">Budget</th><th class="text-right">Approved + paid</th><th class="text-right">Pending</th><th class="text-right">Remaining</th></tr></thead>
             <tbody>
             <tr th:each="t : ${teams}">
-                <td><a class="font-medium text-indigo-700 underline" th:href="@{/teams/{id}(id=${t.id()})}" th:text="${t.name()}"></a>
+                <td><a class="font-medium text-brand-700 underline" th:href="@{/teams/{id}(id=${t.id()})}" th:text="${t.name()}"></a>
                     <th:block th:if="${t.priority()}"><span th:replace="~{fragments/layout :: priority}"></span></th:block>
                     <div class="text-xs text-slate-500" th:text="${t.cohortName()} + ' · ' + ${t.memberCount()} + ' member(s)'"></div></td>
                 <td th:text="${t.program().label()}"></td>

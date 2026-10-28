@@ -35,7 +35,7 @@ public class SecurityConfig {
                                             TransactionTemplate tx, Clock clock) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/login", "/invite/**", "/css/**", "/js/**", "/favicon.ico",
+                        .requestMatchers("/login", "/invite/**", "/css/**", "/js/**", "/img/**", "/favicon.ico",
                                 "/actuator/health", "/actuator/health/**", "/error").permitAll()
                         .anyRequest().authenticated())
                 .formLogin(form -> form

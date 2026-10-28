@@ -38,7 +38,7 @@
             <thead><tr><th>Claim</th><th>Team</th><th>Category</th><th class="text-right">Amount</th><th>Waiting</th><th>Status</th></tr></thead>
             <tbody>
             <tr th:each="r : ${rows}" th:classappend="${r.priority()} ? 'bg-rose-50/50'">
-                <td><a class="text-indigo-700 underline font-medium" th:href="@{/claims/{id}(id=${r.id()})}" th:text="${r.publicCode()}"></a>
+                <td><a class="text-brand-700 underline font-medium" th:href="@{/claims/{id}(id=${r.id()})}" th:text="${r.publicCode()}"></a>
                     <div class="text-xs text-slate-500" th:text="${r.vendorName()}"></div>
                     <th:block th:if="${r.priority()}"><span th:replace="~{fragments/layout :: priority}"></span></th:block>
                     <span th:if="${r.priorityRequested()}" class="chip bg-amber-100 text-amber-900">Priority requested</span></td>

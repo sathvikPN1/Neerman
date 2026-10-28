@@ -22,7 +22,7 @@
                 <td><span th:text="${e.actorName()}"></span><div th:if="${e.onBehalfOfName() != null}" class="text-xs text-slate-500" th:text="'on behalf of ' + ${e.onBehalfOfName()}"></div>
                     <div th:if="${e.permissionUsed() != null}" class="text-xs text-slate-500 font-mono" th:text="${e.permissionUsed()}"></div></td>
                 <td class="font-mono text-xs" th:text="${e.action()}"></td>
-                <td><a th:if="${e.entityType() == 'CLAIM'}" class="text-indigo-700 underline" th:href="@{/claims/{id}(id=${e.entityId()})}" th:text="'Claim #' + ${e.entityId()}"></a>
+                <td><a th:if="${e.entityType() == 'CLAIM'}" class="text-brand-700 underline" th:href="@{/claims/{id}(id=${e.entityId()})}" th:text="'Claim #' + ${e.entityId()}"></a>
                     <span th:unless="${e.entityType() == 'CLAIM'}" th:text="${e.entityType()} + (${e.entityId() != null} ? ' #' + ${e.entityId()} : '')"></span></td>
                 <td class="text-xs" th:text="${e.fromState() != null or e.toState() != null} ? ${e.fromState() ?: '∅'} + ' → ' + ${e.toState()} : ''"></td>
                 <td class="text-xs text-slate-600 break-all" th:text="${e.detail()}"></td>

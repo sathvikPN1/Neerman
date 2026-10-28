@@ -10,7 +10,7 @@
             <h1 class="text-2xl font-semibold">Approvals</h1>
             <p class="text-sm text-slate-600"><span th:text="${count}">0</span> waiting · <span th:text="${@fmt.inr(total)}"></span></p>
         </div>
-        <a sec:authorize="hasAnyAuthority('CLAIM_VERIFY','CLAIM_RETURN_REJECT')" th:href="@{/staff/queue}" class="text-sm text-indigo-700 underline">Full staff queue →</a>
+        <a sec:authorize="hasAnyAuthority('CLAIM_VERIFY','CLAIM_RETURN_REJECT')" th:href="@{/staff/queue}" class="text-sm text-brand-700 underline">Full staff queue →</a>
     </div>
 
     <div th:if="${count == 0}" class="card p-10 text-center text-slate-600">
