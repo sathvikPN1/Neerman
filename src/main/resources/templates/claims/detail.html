@@ -1,217 +1,237 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head th:replace="~{fragments/layout :: head(${claim.publicCode()})}"></head>
-<body>
-<div th:replace="~{fragments/layout :: nav}"></div>
-<main id="main" class="max-w-6xl mx-auto px-4 py-6 space-y-6">
-    <div th:replace="~{fragments/flash :: flash}"></div>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<!-- Screen 06 of the design handoff: one claim, with the action panel for whoever is looking at it. -->
+<head th:replace="~{fragments/shell :: head(${claim.publicCode()})}"></head>
+<body th:replace="~{fragments/shell :: page(${staffSide} ? 'verify' : 'claims', ~{::#content})}">
+<div id="content" style="display:contents"
+     th:with="st=${claim.status().name()}, member=${!staffSide},
+              budgetAfter=${claim.budget().committed().add(claim.claimedAmount())},
+              usedPct=${@fmt.percent(claim.budget().committed(), claim.budget().total())}">
+<div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start">
 
-    <div class="flex flex-wrap items-start justify-between gap-3">
-        <div>
-            <p class="text-sm text-slate-500" th:text="${claim.publicCode()}">NRM-2026-00001</p>
-            <h1 class="text-2xl font-semibold"><span th:text="${claim.vendorName()}">Vendor</span>
-                <span class="text-slate-500 font-normal" th:text="'· ' + ${@fmt.inr(claim.claimedAmount())}"></span></h1>
-            <p class="text-sm text-slate-600">
-                <a th:if="${staffSide}" th:href="@{/teams/{id}(id=${claim.teamId()})}" class="text-brand-700 underline" th:text="${claim.teamName()}">Team</a>
-                <span th:unless="${staffSide}" th:text="${claim.teamName()}">Team</span>
-                · <span th:text="${claim.categoryName()}">Category</span>
-            </p>
+    <!-- Left: the claim -->
+    <div style="flex:2 1 320px;display:flex;flex-direction:column;gap:18px;min-width:0">
+        <div style="display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="font:500 13px 'JetBrains Mono'" th:text="${claim.publicCode()}">NRM-2026-00003</span>
+                <th:block th:if="${claim.priority() or claim.teamPriority()}"><span th:replace="~{fragments/shell :: priority}"></span></th:block>
+                <span th:replace="~{fragments/shell :: status(${claim.status()})}"></span>
+                <span th:if="${claim.priorityRequested()}" class="tag tag-warn">Priority requested</span>
+                <span th:if="${claim.isPartial()}" class="tag tag-warn">Partial</span></div>
+            <h1 class="page-title" style="overflow-wrap:anywhere" th:text="${claim.vendorName()}">Autodesk India</h1>
+            <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:14px;color:var(--color-neutral-800)">
+                <a th:if="${staffSide}" th:href="@{/teams/{id}(id=${claim.teamId()})}" th:text="${claim.teamName()}">MedTrack</a>
+                <span th:unless="${staffSide}" th:text="${claim.teamName()}">MedTrack</span>
+                <span th:text="${claim.categoryName()}">Software</span>
+                <span th:if="${claim.submittedAt() != null}" th:text="'Submitted ' + ${@fmt.dateTime(claim.submittedAt())} + ' IST'">Submitted 26 Oct 2026, 3:42 pm IST</span></div>
+            <span style="font:600 40px var(--font-heading)" th:text="${@fmt.inr(claim.claimedAmount())}">₹12,999.00</span>
+            <span th:if="${claim.approvedAmount() != null and claim.isPartial()}" class="muted-sm" th:text="'Approved ' + ${@fmt.inr(claim.approvedAmount())}"></span>
         </div>
-        <div class="flex flex-wrap items-center gap-2">
-            <span th:replace="~{fragments/layout :: status(${claim.status()})}"></span>
-            <th:block th:if="${claim.priority() or claim.teamPriority()}"><span th:replace="~{fragments/layout :: priority}"></span></th:block>
-            <span th:if="${claim.priorityRequested()}" class="chip bg-amber-100 text-amber-900">Priority requested</span>
+
+        <div th:if="${claim.decisionReason() != null}" class="notice" role="status"
+             th:style="${st == 'REJECTED'} ? 'background:#FBE4E5;color:#A3212B' : (${st == 'APPROVED' or st == 'PAID'} ? 'background:var(--color-accent-100);color:var(--color-accent-800)' : 'background:#FDEBDD;color:#7A3410')">
+            <i th:class="${st == 'REJECTED'} ? 'icon-ban' : (${st == 'APPROVED' or st == 'PAID'} ? 'icon-circle-check' : 'icon-undo-2')" aria-hidden="true"></i>
+            <div><b th:text="${st == 'APPROVED' or st == 'PAID'} ? 'Approval note:' : (${st == 'REJECTED'} ? 'Rejected:' : 'Returned:')">Returned:</b> <span th:text="${claim.decisionReason()}"></span></div></div>
+        <div th:if="${claim.payment() != null}" class="notice notice-ok" role="status"><i class="icon-banknote" aria-hidden="true"></i>
+            <div><b th:text="'Paid ' + ${@fmt.inr(claim.payment().amount())}">Paid</b> on <span th:text="${@fmt.date(claim.payment().paidOn())}"></span> via <span th:text="${claim.payment().mode()}"></span> · UTR <span class="mono" th:text="${claim.payment().utr()}"></span></div></div>
+        <div th:replace="~{claims/fragments :: warnings(warnings=${claim.warnings()})}"></div>
+
+        <div class="facts">
+            <div><span class="label">Category</span><b th:text="${claim.categoryName()}">Software</b></div>
+            <div><span class="label">Invoice no.</span><b class="mono" style="font-weight:500" th:text="${claim.invoiceNumber() ?: '—'}">ADSK-IN-55120</b></div>
+            <div><span class="label">Invoice date</span><b th:text="${claim.invoiceDate() == null} ? '—' : ${@fmt.date(claim.invoiceDate())}">25 Oct 2026</b></div>
+            <div><span class="label">Expense date</span><b th:text="${@fmt.date(claim.expenseDate())}">24 Oct 2026</b></div>
+            <div><span class="label">Vendor GSTIN</span><b class="mono" style="font-weight:500" th:text="${claim.vendorGstin() ?: '—'}">—</b></div>
+            <div><span class="label">Submitted by</span><b th:text="${claim.submittedByName() ?: '—'}">Ananya Iyer</b></div>
+            <div th:if="${claim.verifiedByName() != null}"><span class="label">Verified by</span><b th:text="${claim.verifiedByName()}">Rahul Menon</b></div>
+            <div th:if="${claim.approvedByName() != null}"><span class="label">Approved by</span><b th:text="${claim.approvedByName()}">R. Krishnan</b></div>
         </div>
-    </div>
+        <div><span class="card-kicker">Justification</span><p style="margin:4px 0 0;white-space:pre-line" th:text="${claim.justification()}">Needed to finish the enclosure CAD…</p></div>
+        <div th:if="${claim.priorityReason() != null}"><span class="card-kicker">Priority reason</span><p style="margin:4px 0 0" th:text="${claim.priorityReason()}"></p></div>
+        <div th:if="${claim.priorityRequested()}"><span class="card-kicker">Team's priority request</span><p style="margin:4px 0 0" th:text="${claim.priorityRequestReason()}"></p></div>
 
-    <div th:if="${claim.decisionReason() != null}" class="rounded-lg border px-4 py-3"
-         th:classappend="${claim.status().name() == 'REJECTED'} ? 'border-rose-200 bg-rose-50 text-rose-900' : 'border-amber-200 bg-amber-50 text-amber-900'">
-        <strong th:text="${claim.status().name() == 'APPROVED' or claim.status().name() == 'PAID'} ? 'Approval note:' : 'Reason:'"></strong>
-        <span th:text="${claim.decisionReason()}"></span>
-    </div>
-
-    <div th:if="${claim.editable()}" class="rounded-lg border border-brand-200 bg-brand-50 px-4 py-3 flex flex-wrap items-center justify-between gap-2">
-        <span th:text="${claim.status().name() == 'RETURNED'} ? 'This claim was returned. Edit it and resubmit.' : 'This claim is a draft. Add documents and submit it.'"></span>
-        <a th:href="@{/claims/{id}/edit(id=${claim.id()})}" class="btn btn-primary">Edit &amp; submit</a>
-    </div>
-
-    <div class="grid lg:grid-cols-2 gap-6">
-        <!-- Left: claim data, warnings, actions -->
-        <div class="space-y-6">
-            <section class="card p-4" aria-labelledby="details-title">
-                <h2 id="details-title" class="font-semibold mb-3">Details</h2>
-                <dl class="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-                    <div><dt class="text-slate-500">Claimed</dt><dd class="font-semibold" th:text="${@fmt.inr(claim.claimedAmount())}"></dd></div>
-                    <div><dt class="text-slate-500">Approved</dt>
-                        <dd class="font-semibold"><span th:text="${@fmt.inr(claim.approvedAmount())}"></span>
-                            <span th:if="${claim.isPartial()}" class="chip bg-amber-100 text-amber-900 ml-1">Partial</span></dd></div>
-                    <div><dt class="text-slate-500">Expense date</dt><dd th:text="${@fmt.date(claim.expenseDate())}"></dd></div>
-                    <div><dt class="text-slate-500">Vendor GSTIN</dt><dd th:text="${claim.vendorGstin() ?: '—'}"></dd></div>
-                    <div><dt class="text-slate-500">Invoice no.</dt><dd th:text="${claim.invoiceNumber() ?: '—'}"></dd></div>
-                    <div><dt class="text-slate-500">Invoice date</dt><dd th:text="${@fmt.date(claim.invoiceDate())}"></dd></div>
-                    <div><dt class="text-slate-500">Submitted by</dt><dd th:text="${claim.submittedByName() ?: '—'}"></dd></div>
-                    <div><dt class="text-slate-500">Submitted</dt><dd th:text="${@fmt.dateTime(claim.submittedAt())}"></dd></div>
-                    <div th:if="${claim.verifiedByName() != null}"><dt class="text-slate-500">Verified by</dt><dd th:text="${claim.verifiedByName()}"></dd></div>
-                    <div th:if="${claim.approvedByName() != null}"><dt class="text-slate-500">Approved by</dt><dd th:text="${claim.approvedByName()}"></dd></div>
-                    <div class="col-span-2"><dt class="text-slate-500">Justification</dt><dd class="whitespace-pre-line" th:text="${claim.justification()}"></dd></div>
-                    <div th:if="${claim.priorityReason() != null}" class="col-span-2"><dt class="text-slate-500">Priority reason</dt><dd th:text="${claim.priorityReason()}"></dd></div>
-                    <div th:if="${claim.priorityRequested()}" class="col-span-2"><dt class="text-slate-500">Team's priority request</dt><dd th:text="${claim.priorityRequestReason()}"></dd></div>
-                </dl>
-                <div th:if="${claim.payment() != null}" class="mt-4 rounded-lg bg-green-50 border border-green-200 p-3 text-sm text-green-900">
-                    <strong>Paid</strong> <span th:text="${@fmt.inr(claim.payment().amount())}"></span> on <span th:text="${@fmt.date(claim.payment().paidOn())}"></span>
-                    via <span th:text="${claim.payment().mode()}"></span> · UTR <span class="font-mono" th:text="${claim.payment().utr()}"></span>
+        <!-- Documents with a preview -->
+        <p th:if="${claim.documents().isEmpty()}" class="muted-sm" style="margin:0">No documents uploaded yet.</p>
+        <div th:unless="${claim.documents().isEmpty()}" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+            <div th:each="d : ${claim.documents()}" class="blueprint" style="background:#fff;display:flex;flex-direction:column;min-width:0">
+                <th:block th:replace="~{fragments/shell :: corners}"></th:block>
+                <div class="doc-preview">
+                    <iframe th:if="${d.isPdf()}" th:src="@{/documents/{id}(id=${d.id()})}" th:title="${d.type().label()} + ' preview'" loading="lazy"></iframe>
+                    <img th:if="${d.isImage()}" th:src="@{/documents/{id}(id=${d.id()})}" th:alt="${d.type().label()}" loading="lazy">
+                    <span th:unless="${d.isPdf() or d.isImage()}">no preview · download to view</span>
                 </div>
-            </section>
+                <div style="padding:10px;display:flex;align-items:center;gap:8px;font-size:13px">
+                    <i th:class="${d.isImage()} ? 'icon-image' : 'icon-file-text'" aria-hidden="true"></i>
+                    <span style="flex:1;display:flex;flex-direction:column;min-width:0"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" th:text="${d.originalFilename()}" th:title="'SHA-256 ' + ${d.sha256()}">adsk-invoice.pdf</span>
+                        <span class="text-muted" style="font-size:12px" th:text="${d.type().label()} + ' · ' + ${d.sizeLabel()}">Invoice</span></span>
+                    <a th:href="@{/documents/{id}(id=${d.id()})}" target="_blank" rel="noopener" th:attr="aria-label='Open ' + ${d.originalFilename()}"><i class="icon-external-link" aria-hidden="true"></i></a>
+                    <a th:href="@{/documents/{id}(id=${d.id()},download=true)}" th:attr="aria-label='Download ' + ${d.originalFilename()}"><i class="icon-download" aria-hidden="true"></i></a>
+                </div>
+            </div>
+        </div>
 
-            <th:block th:if="${staffSide}"><div th:replace="~{fragments/budget :: meter(${claim.budget()}, 'Team budget')}"></div></th:block>
-            <div th:replace="~{claims/fragments :: warnings(warnings=${claim.warnings()})}"></div>
+        <!-- Messages -->
+        <section id="comments" style="display:flex;flex-direction:column;gap:10px" aria-labelledby="messages-title">
+            <span id="messages-title" class="section-title">Messages</span>
+            <div th:replace="~{claims/fragments :: comments(comments=${claim.comments()})}"></div>
+            <form th:action="@{/claims/{id}/comments(id=${claim.id()})}" method="post" style="display:flex;gap:8px"
+                  th:attr="hx-post=@{/claims/{id}/comments(id=${claim.id()})}" hx-target="#comments-list" hx-swap="outerHTML"
+                  hx-on::after-request="if(event.detail.successful) this.reset()">
+                <label for="body" class="hidden">Message</label>
+                <input class="input" id="body" name="body" maxlength="4000" required style="min-height:44px;flex:1"
+                       th:placeholder="${staffSide} ? 'Write a message to the team' : 'Write a message to Nirmaan staff'">
+                <button class="btn btn-secondary" style="min-height:44px"><i class="icon-send" aria-hidden="true"></i>Send</button>
+            </form>
+        </section>
+    </div>
 
-            <!-- Workflow actions available to the current user -->
-            <section th:if="${!claim.availableActions().isEmpty() and !claim.editable()}" class="card p-4 space-y-3" aria-labelledby="actions-title">
-                <h2 id="actions-title" class="font-semibold">Actions</h2>
+    <!-- Right: what this person can do now, then the history -->
+    <div style="flex:1 1 280px;display:flex;flex-direction:column;gap:16px;min-width:0">
+        <div class="blueprint" style="padding:18px;background:#fff;display:flex;flex-direction:column;gap:12px">
+            <th:block th:replace="~{fragments/shell :: corners}"></th:block>
+            <span class="card-kicker" th:text="${claim.can('MARK_PAID')} ? 'Finance · pay' : (${claim.can('APPROVE')} ? 'COO · decide' : (${claim.can('VERIFY')} ? 'Staff · verify' : (${member} ? 'Your claim' : 'Status')))">Staff · verify</span>
+            <span style="font:600 20px var(--font-heading)"
+                  th:text="${claim.can('MARK_PAID')} ? 'Record the payment' : (${claim.can('APPROVE')} ? 'Approve this claim?' : (${claim.can('VERIFY')} ? 'Check and verify'
+                          : (${st == 'SUBMITTED' or st == 'VERIFIED'} ? 'With Nirmaan staff' : ${claim.status().label()})))">Check and verify</span>
 
-                <form th:if="${claim.can('VERIFY')}" th:action="@{/claims/{id}/actions/verify(id=${claim.id()})}" method="post">
+            <!-- Staff: verify -->
+            <th:block th:if="${claim.can('VERIFY') and !claim.can('APPROVE')}">
+                <div style="display:flex;flex-direction:column;gap:8px;font-size:14px" aria-label="Checklist (not saved)">
+                    <label class="check"><input type="checkbox">Invoice is a final tax invoice</label>
+                    <label class="check"><input type="checkbox">Amount matches invoice</label>
+                    <label class="check"><input type="checkbox">Payment proof matches the amount</label>
+                </div>
+                <form th:action="@{/claims/{id}/actions/verify(id=${claim.id()})}" method="post" style="display:flex;flex-direction:column">
                     <input type="hidden" name="version" th:value="${claim.version()}">
-                    <button class="btn btn-primary w-full sm:w-auto">Verify &amp; forward for approval</button>
+                    <button class="btn btn-primary btn-lg" style="font-size:15px"><i class="icon-check" aria-hidden="true"></i>Verify and send to COO</button>
                 </form>
+            </th:block>
 
-                <div th:if="${claim.can('APPROVE')}" class="space-y-2">
-                    <form th:action="@{/claims/{id}/actions/approve(id=${claim.id()})}" method="post">
+            <!-- COO: approve (from SUBMITTED this verifies and approves in one step) -->
+            <th:block th:if="${claim.can('APPROVE')}">
+                <span style="font-size:13px;color:var(--color-neutral-800)" th:text="'Budget after approval: ' + ${@fmt.percent(budgetAfter, claim.budget().total())} + '% used · ' + ${@fmt.inr(claim.budget().remaining().subtract(claim.claimedAmount()))} + ' left'">Budget after approval: 75% used</span>
+                <div class="bar bar-thin" aria-hidden="true"><span class="used" th:style="'width:' + ${usedPct} + '%'"></span><span class="adding" th:style="'width:' + ${@fmt.addedPercent(claim.claimedAmount(), claim.budget().total(), usedPct)} + '%'"></span></div>
+                <form th:action="@{/claims/{id}/actions/approve(id=${claim.id()})}" method="post" style="display:flex;flex-direction:column">
+                    <input type="hidden" name="version" th:value="${claim.version()}">
+                    <button class="btn btn-primary btn-lg" style="font-size:15px"><i class="icon-check" aria-hidden="true"></i>
+                        <th:block th:text="${st == 'SUBMITTED'} ? 'Verify and approve' : 'Approve'">Approve</th:block></button>
+                </form>
+                <details>
+                    <summary class="text-link" style="font-size:14px">Approve a lower amount…</summary>
+                    <form th:action="@{/claims/{id}/actions/approve(id=${claim.id()})}" method="post" style="display:flex;flex-direction:column;gap:10px;margin-top:10px">
                         <input type="hidden" name="version" th:value="${claim.version()}">
-                        <button class="btn btn-success w-full sm:w-auto"
-                                th:text="${claim.status().name() == 'SUBMITTED'} ? 'Verify & approve ' + ${@fmt.inr(claim.claimedAmount())} : 'Approve ' + ${@fmt.inr(claim.claimedAmount())}">Approve</button>
-                    </form>
-                    <details class="rounded-lg border p-3">
-                        <summary class="text-sm font-semibold text-slate-700">Partially approve…</summary>
-                        <form th:action="@{/claims/{id}/actions/approve(id=${claim.id()})}" method="post" class="mt-3 space-y-2">
-                            <input type="hidden" name="version" th:value="${claim.version()}">
-                            <label class="label" for="approvedAmount">Amount to approve (₹)</label>
-                            <input class="input" id="approvedAmount" name="approvedAmount" inputmode="decimal" required
+                        <div class="field"><label for="approvedAmount">Amount to approve (₹)</label>
+                            <input class="input mono" id="approvedAmount" name="approvedAmount" inputmode="decimal" required
                                    th:value="${claim.budget().remaining().compareTo(claim.claimedAmount()) < 0 and claim.budget().remaining().signum() > 0} ? ${claim.budget().remaining()} : ''">
-                            <p class="hint">Remaining team budget: <span th:text="${@fmt.inr(claim.budget().remaining())}"></span></p>
-                            <label class="label" for="partialReason">Reason (shared with the team)</label>
-                            <textarea class="input" id="partialReason" name="comment" rows="2" required></textarea>
-                            <button class="btn btn-success">Approve partially</button>
-                        </form>
-                    </details>
+                            <p class="hint" th:text="'Remaining team budget: ' + ${@fmt.inr(claim.budget().remaining())}"></p></div>
+                        <div class="field"><label for="partialReason">Reason (shown to the team)</label><textarea class="input" id="partialReason" name="comment" style="min-height:72px" required></textarea></div>
+                        <button class="btn btn-secondary btn-md">Approve partially</button>
+                    </form>
+                </details>
+            </th:block>
+
+            <!-- Return / reject share one reason box -->
+            <form th:if="${claim.can('RETURN') or claim.can('REJECT')}" th:action="@{/claims/{id}/actions/return(id=${claim.id()})}" method="post" style="display:flex;flex-direction:column;gap:10px">
+                <input type="hidden" name="version" th:value="${claim.version()}">
+                <div class="field"><label for="reason">Reason (shown to the team)</label>
+                    <textarea class="input" id="reason" name="comment" style="min-height:72px" required placeholder="e.g. The invoice is a pro-forma…"></textarea></div>
+                <div style="display:flex;gap:8px">
+                    <button th:if="${claim.can('RETURN')}" class="btn btn-secondary" style="min-height:44px;flex:1"><i class="icon-undo-2" aria-hidden="true"></i>Return to team</button>
+                    <button th:if="${claim.can('REJECT')}" class="btn btn-secondary danger-text" style="min-height:44px;flex:1"
+                            th:attr="formaction=@{/claims/{id}/actions/reject(id=${claim.id()})}"><i class="icon-ban" aria-hidden="true"></i>Reject</button>
                 </div>
+            </form>
 
-                <details th:if="${claim.can('RETURN')}" class="rounded-lg border p-3">
-                    <summary class="text-sm font-semibold text-amber-800">Return to team for changes…</summary>
-                    <form th:action="@{/claims/{id}/actions/return(id=${claim.id()})}" method="post" class="mt-3 space-y-2">
-                        <input type="hidden" name="version" th:value="${claim.version()}">
-                        <label class="label" for="returnReason">What should the team fix?</label>
-                        <textarea class="input" id="returnReason" name="comment" rows="2" required></textarea>
-                        <button class="btn btn-warn">Return claim</button>
-                    </form>
-                </details>
+            <!-- Finance: mark paid -->
+            <form th:if="${claim.can('MARK_PAID')}" th:action="@{/finance/payments/{id}(id=${claim.id()})}" method="post" style="display:flex;flex-direction:column;gap:12px">
+                <input type="hidden" name="version" th:value="${claim.version()}">
+                <div class="field"><label for="paidOn">Paid on</label><input class="input" id="paidOn" name="paidOn" type="date" th:value="${@fmt.today()}" th:max="${@fmt.today()}" required></div>
+                <div class="field"><label for="mode">Mode</label><select class="input" id="mode" name="mode"><option>NEFT</option><option>IMPS</option><option>UPI</option></select></div>
+                <div class="field"><label for="utr">UTR / reference</label><input class="input mono" id="utr" name="utr" maxlength="40" required placeholder="e.g. HDFCN52026102812345"></div>
+                <button class="btn btn-primary btn-lg" style="font-size:15px"><i class="icon-banknote" aria-hidden="true"></i>
+                    <th:block th:text="'Mark ' + ${@fmt.inr(claim.approvedAmount())} + ' as paid'">Mark as paid</th:block></button>
+            </form>
 
-                <details th:if="${claim.can('REJECT')}" class="rounded-lg border p-3">
-                    <summary class="text-sm font-semibold text-rose-800">Reject…</summary>
-                    <form th:action="@{/claims/{id}/actions/reject(id=${claim.id()})}" method="post" class="mt-3 space-y-2">
-                        <input type="hidden" name="version" th:value="${claim.version()}">
-                        <label class="label" for="rejectReason">Reason for rejection</label>
-                        <textarea class="input" id="rejectReason" name="comment" rows="2" required></textarea>
-                        <button class="btn btn-danger">Reject claim</button>
-                    </form>
-                </details>
-
-                <details th:if="${claim.can('REOPEN')}" class="rounded-lg border p-3">
-                    <summary class="text-sm font-semibold text-slate-700">COO override: reopen…</summary>
-                    <form th:action="@{/claims/{id}/actions/reopen(id=${claim.id()})}" method="post" class="mt-3 space-y-2">
-                        <input type="hidden" name="version" th:value="${claim.version()}">
-                        <label class="label" for="reopenReason">Reason (audit-logged)</label>
-                        <textarea class="input" id="reopenReason" name="comment" rows="2" required></textarea>
-                        <button class="btn btn-ghost">Reopen for review</button>
-                    </form>
-                </details>
-
-                <form th:if="${claim.can('MARK_PAID')}" th:action="@{/finance/payments/{id}(id=${claim.id()})}" method="post" class="rounded-lg border p-3 grid sm:grid-cols-3 gap-2 items-end">
+            <!-- COO override -->
+            <details th:if="${claim.can('REOPEN')}">
+                <summary class="text-link" style="font-size:14px">COO override: reopen for review…</summary>
+                <form th:action="@{/claims/{id}/actions/reopen(id=${claim.id()})}" method="post" style="display:flex;flex-direction:column;gap:10px;margin-top:10px">
                     <input type="hidden" name="version" th:value="${claim.version()}">
-                    <div><label class="label" for="paidOn">Paid on</label><input class="input" id="paidOn" name="paidOn" type="date" th:value="${@fmt.today()}" required></div>
-                    <div><label class="label" for="mode">Mode</label>
-                        <select class="input" id="mode" name="mode"><option>NEFT</option><option>IMPS</option><option>UPI</option></select></div>
-                    <div><label class="label" for="utr">UTR / reference</label><input class="input" id="utr" name="utr" required></div>
-                    <button class="btn btn-success sm:col-span-3">Mark as paid <span th:text="${@fmt.inr(claim.approvedAmount())}"></span></button>
+                    <div class="field"><label for="reopenReason">Reason (audit-logged)</label><textarea class="input" id="reopenReason" name="comment" style="min-height:72px" required></textarea></div>
+                    <button class="btn btn-secondary btn-md">Reopen</button>
                 </form>
-            </section>
+            </details>
 
-            <!-- Priority -->
-            <section th:if="${claim.canFlagPriority() or claim.canRequestPriority()}" class="card p-4 space-y-3" aria-labelledby="priority-title">
-                <h2 id="priority-title" class="font-semibold">Priority</h2>
-                <th:block th:if="${claim.canFlagPriority()}">
-                    <form th:if="${claim.priorityRequested()}" th:action="@{/claims/{id}/priority(id=${claim.id()})}" method="post" class="flex flex-wrap gap-2">
+            <!-- Everyone else: where the claim is -->
+            <th:block th:unless="${claim.can('VERIFY') or claim.can('APPROVE') or claim.can('MARK_PAID') or claim.can('RETURN') or claim.can('REJECT') or claim.can('REOPEN')}">
+                <span style="font-size:14px;color:var(--color-neutral-800)" th:switch="${st}">
+                    <th:block th:case="'DRAFT'">This claim is a draft. Add the invoice and payment proof, then submit it.</th:block>
+                    <th:block th:case="'SUBMITTED'">Staff are checking the invoice. You'll get an email if anything is missing.</th:block>
+                    <th:block th:case="'VERIFIED'">Verified by staff. Waiting for the COO's approval.</th:block>
+                    <th:block th:case="'RETURNED'">Returned for changes. Fix the claim and resubmit it.</th:block>
+                    <th:block th:case="'APPROVED'">Approved. Finance will pay it to the team's bank account.</th:block>
+                    <th:block th:case="'PAID'">Paid. Nothing more to do.</th:block>
+                    <th:block th:case="'REJECTED'">Rejected. Read the reason above.</th:block>
+                </span>
+                <a th:if="${claim.editable()}" th:href="@{/claims/{id}/edit(id=${claim.id()})}" class="btn btn-primary btn-md"><i class="icon-pencil" aria-hidden="true"></i>Edit and submit</a>
+            </th:block>
+        </div>
+
+        <!-- Team budget for staff -->
+        <div th:if="${staffSide}" class="panel" style="gap:8px">
+            <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><span class="card-kicker">Team budget</span>
+                <span class="mono" style="font-size:13px" th:text="${@fmt.inrWhole(claim.budget().committed())} + ' of ' + ${@fmt.inrWhole(claim.budget().total())}">₹62,450 of ₹1,00,000</span></div>
+            <div class="bar bar-thin" aria-hidden="true"><span class="used" th:style="'width:' + ${usedPct} + '%'"></span><span class="adding" th:style="'width:' + ${@fmt.addedPercent(claim.budget().pending(), claim.budget().total(), usedPct)} + '%'"></span></div>
+            <span class="muted-sm" th:text="'Paid or approved ' + ${@fmt.inrWhole(claim.budget().committed())} + ' · in review ' + ${@fmt.inrWhole(claim.budget().pending())} + ' · ' + ${@fmt.inrWhole(claim.budget().remaining())} + ' left'"></span>
+        </div>
+
+        <!-- Priority -->
+        <div th:if="${claim.canFlagPriority() or claim.canRequestPriority()}" class="panel">
+            <span class="card-kicker">Priority</span>
+            <th:block th:if="${claim.canFlagPriority()}">
+                <th:block th:if="${claim.priorityRequested()}">
+                    <form th:action="@{/claims/{id}/priority(id=${claim.id()})}" method="post" style="display:flex;flex-direction:column">
                         <input type="hidden" name="priority" value="true">
                         <input type="hidden" name="reason" th:value="'Team request: ' + ${claim.priorityRequestReason()}">
-                        <button class="btn btn-danger">Accept priority request</button>
+                        <button class="btn btn-primary btn-md"><i class="icon-flag" aria-hidden="true"></i>Accept priority request</button>
                     </form>
-                    <form th:if="${claim.priorityRequested()}" th:action="@{/claims/{id}/priority-request/decline(id=${claim.id()})}" method="post" class="flex flex-wrap gap-2 items-end">
-                        <div class="grow"><label class="label" for="declineNote">Note to team (optional)</label><input class="input" id="declineNote" name="note"></div>
-                        <button class="btn btn-ghost">Decline request</button>
-                    </form>
-                    <form th:unless="${claim.priority()}" th:action="@{/claims/{id}/priority(id=${claim.id()})}" method="post" class="flex flex-wrap gap-2 items-end">
-                        <input type="hidden" name="priority" value="true">
-                        <div class="grow"><label class="label" for="priorityReason">Reason</label>
-                            <input class="input" id="priorityReason" name="reason" required placeholder="e.g. student cannot afford to wait"></div>
-                        <button class="btn btn-danger">Mark as priority</button>
-                    </form>
-                    <form th:if="${claim.priority()}" th:action="@{/claims/{id}/priority(id=${claim.id()})}" method="post">
-                        <input type="hidden" name="priority" value="false">
-                        <button class="btn btn-ghost">Remove priority</button>
+                    <form th:action="@{/claims/{id}/priority-request/decline(id=${claim.id()})}" method="post" style="display:flex;gap:8px;align-items:flex-end">
+                        <div class="field" style="flex:1"><label for="declineNote">Note to team (optional)</label><input class="input" id="declineNote" name="note"></div>
+                        <button class="btn btn-secondary" style="min-height:44px">Decline</button>
                     </form>
                 </th:block>
-                <form th:if="${claim.canRequestPriority()}" th:action="@{/claims/{id}/priority-request(id=${claim.id()})}" method="post" class="space-y-2">
-                    <label class="label" for="requestReason">Need this paid urgently? Tell Nirmaan why.</label>
-                    <textarea class="input" id="requestReason" name="reason" rows="2" required></textarea>
-                    <button class="btn btn-ghost">Request priority</button>
+                <form th:unless="${claim.priority()}" th:action="@{/claims/{id}/priority(id=${claim.id()})}" method="post" style="display:flex;gap:8px;align-items:flex-end">
+                    <input type="hidden" name="priority" value="true">
+                    <div class="field" style="flex:1"><label for="priorityReason">Reason</label><input class="input" id="priorityReason" name="reason" required placeholder="e.g. student cannot afford to wait"></div>
+                    <button class="btn btn-secondary" style="min-height:44px"><i class="icon-flag" aria-hidden="true"></i>Mark</button>
                 </form>
-            </section>
+                <form th:if="${claim.priority()}" th:action="@{/claims/{id}/priority(id=${claim.id()})}" method="post">
+                    <input type="hidden" name="priority" value="false"><button class="btn btn-secondary" style="min-height:44px">Remove priority</button>
+                </form>
+            </th:block>
+            <form th:if="${claim.canRequestPriority()}" th:action="@{/claims/{id}/priority-request(id=${claim.id()})}" method="post" style="display:flex;flex-direction:column;gap:10px">
+                <div class="field"><label for="requestReason">Need this paid urgently? Tell Nirmaan why.</label><textarea class="input" id="requestReason" name="reason" style="min-height:72px" required></textarea></div>
+                <button class="btn btn-secondary btn-md"><i class="icon-flag" aria-hidden="true"></i>Request priority</button>
+            </form>
         </div>
 
-        <!-- Right: documents -->
-        <section class="space-y-4" aria-labelledby="docs-title">
-            <h2 id="docs-title" class="font-semibold">Documents</h2>
-            <p th:if="${claim.documents().isEmpty()}" class="text-sm text-slate-500">No documents uploaded yet.</p>
-            <div th:each="d, s : ${claim.documents()}" class="card overflow-hidden">
-                <div class="flex items-center justify-between px-3 py-2 border-b bg-slate-50">
-                    <p class="text-sm"><strong th:text="${d.type().label()}"></strong> · <span th:text="${d.originalFilename()}"></span></p>
-                    <a class="text-sm text-brand-700 underline" th:href="@{/documents/{id}(id=${d.id()},download=true)}">Download</a>
-                </div>
-                <iframe th:if="${d.isPdf()}" th:src="@{/documents/{id}(id=${d.id()})}" class="w-full h-[28rem] bg-white" th:title="${d.type().label()} + ' preview'"></iframe>
-                <img th:if="${d.isImage()}" th:src="@{/documents/{id}(id=${d.id()})}" th:alt="${d.type().label()}" class="w-full object-contain max-h-[28rem] bg-white" loading="lazy">
-                <p th:unless="${d.isPdf() or d.isImage()}" class="p-3 text-sm text-slate-600">Preview not available for this file type. Download to view.</p>
-                <p class="px-3 py-1 text-[11px] text-slate-400 font-mono truncate" th:text="'SHA-256 ' + ${d.sha256()}"></p>
+        <!-- History -->
+        <section style="display:flex;flex-direction:column;padding-left:6px" aria-labelledby="history-title">
+            <span id="history-title" class="section-title" style="margin-bottom:10px">History</span>
+            <div th:each="e : ${claim.timeline()}" class="timeline-item">
+                <div class="rail"><span class="dot"></span><span class="line"></span></div>
+                <div class="body"><b th:text="${@fmt.humanise(e.action())}">Submitted</b>
+                    <span class="text-muted" style="font-size:12px" th:text="${e.actorName()} + (${e.onBehalfOfName() != null} ? ' (on behalf of ' + ${e.onBehalfOfName()} + ')' : '') + ' · ' + ${@fmt.dateTime(e.createdAt())}">Ananya Iyer · 26 Oct, 3:42 pm</span>
+                    <span th:if="${e.comment() != null}" style="font-size:13px;white-space:pre-line;margin-top:2px" th:text="'“' + ${e.comment()} + '”'"></span></div>
+            </div>
+            <div th:unless="${claim.status().isTerminal()}" class="timeline-item">
+                <div class="rail"><span class="dot" style="background:var(--color-neutral-400)"></span></div>
+                <div class="body" th:switch="${st}"><b th:case="'DRAFT'">Waiting for the team to submit</b><b th:case="'RETURNED'">Waiting for the team to resubmit</b>
+                    <b th:case="'SUBMITTED'">Waiting for verification</b><b th:case="'VERIFIED'">Waiting for the COO</b><b th:case="'APPROVED'">Waiting for payment</b>
+                    <span class="text-muted" style="font-size:12px">now</span></div>
             </div>
         </section>
     </div>
-
-    <div class="grid lg:grid-cols-2 gap-6">
-        <section id="comments" class="card p-4 space-y-3" aria-labelledby="comments-title">
-            <h2 id="comments-title" class="font-semibold">Messages</h2>
-            <div th:replace="~{claims/fragments :: comments(comments=${claim.comments()})}"></div>
-            <form th:action="@{/claims/{id}/comments(id=${claim.id()})}" method="post" class="space-y-2"
-                  th:attr="hx-post=@{/claims/{id}/comments(id=${claim.id()})}" hx-target="#comments-list" hx-swap="outerHTML"
-                  hx-on::after-request="if(event.detail.successful) this.reset()">
-                <label class="label" for="body">New message</label>
-                <textarea class="input" id="body" name="body" rows="2" maxlength="4000" required></textarea>
-                <button class="btn btn-primary">Send</button>
-            </form>
-        </section>
-
-        <section class="card p-4" aria-labelledby="timeline-title">
-            <h2 id="timeline-title" class="font-semibold mb-3">History</h2>
-            <ol class="relative border-l border-slate-200 ml-2 space-y-4">
-                <li th:each="e : ${claim.timeline()}" class="ml-4">
-                    <span class="absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full border border-white bg-brand-500" aria-hidden="true"></span>
-                    <p class="text-sm"><strong th:text="${@fmt.humanise(e.action())}">Submitted</strong>
-                        <span class="text-slate-600" th:text="'by ' + ${e.actorName()}"></span>
-                        <span th:if="${e.onBehalfOfName() != null}" class="text-slate-600" th:text="'(on behalf of ' + ${e.onBehalfOfName()} + ')'"></span></p>
-                    <p class="text-xs text-slate-500" th:text="${@fmt.dateTime(e.createdAt())}"></p>
-                    <p th:if="${e.comment() != null}" class="text-sm text-slate-700 mt-1 whitespace-pre-line" th:text="'“' + ${e.comment()} + '”'"></p>
-                </li>
-            </ol>
-        </section>
-    </div>
-</main>
+</div>
+</div>
 </body>
 </html>

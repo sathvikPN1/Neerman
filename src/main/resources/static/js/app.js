@@ -53,3 +53,15 @@ document.addEventListener('input', function (e) {
         el.querySelector('i').className = rule[1] ? 'icon-circle-check' : 'icon-circle';
     });
 });
+// Upload boxes: picking a file (or taking a photo) uploads it straight away. The box has two file inputs
+// (camera and file picker) with the same name, so the empty one is disabled to send only the chosen file.
+document.addEventListener('change', function (e) {
+    var form = e.target.closest('form[data-autosubmit]');
+    if (!form || e.target.type !== 'file' || !e.target.files.length) {
+        return;
+    }
+    form.querySelectorAll('input[type="file"]').forEach(function (input) {
+        input.disabled = input !== e.target;
+    });
+    form.submit();
+});

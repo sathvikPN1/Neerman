@@ -9,6 +9,9 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.LinkedHashMap;
+import java.util.Locale;
+import java.util.Map;
 
 /** Formatting helpers exposed to templates as {@code ${@fmt...}}. */
 @Component("fmt")
@@ -31,6 +34,11 @@ public class ViewHelpers {
     /** Whole-number percentage of part in total (0 when total is zero). */
     public int percent(BigDecimal part, BigDecimal total) {
         return Money.percent(part, total);
+    }
+
+    /** Width of the "this claim" segment of a budget bar: the claim's share, capped at what is left of 100%. */
+    public int addedPercent(BigDecimal amount, BigDecimal total, int usedPercent) {
+        return Math.min(Money.percent(amount, total), Math.max(0, 100 - usedPercent));
     }
 
     public String shortDate(LocalDate date) {
@@ -97,6 +105,40 @@ public class ViewHelpers {
             case PAID -> "bg-green-600 text-white";
             case REJECTED -> "bg-rose-100 text-rose-800";
         };
+    }
+
+    /** Icon for an audit-log action, e.g. APPROVED → a tick. First matching keyword wins. */
+    public String auditIcon(String action) {
+        return iconFor(action == null ? "" : action, AUDIT_ICONS, "icon-dot");
+    }
+
+    /** Icon for a notification, chosen from words in its text. */
+    public String notificationIcon(String message) {
+        return iconFor(message == null ? "" : message.toLowerCase(Locale.ROOT), NOTIFICATION_ICONS, "icon-bell");
+    }
+
+    private static String iconFor(String text, Map<String, String> icons, String fallback) {
+        return icons.entrySet().stream().filter(e -> text.contains(e.getKey())).map(Map.Entry::getValue)
+                .findFirst().orElse(fallback);
+    }
+
+    private static final Map<String, String> AUDIT_ICONS = linked(
+            "PAID", "icon-banknote", "PAYMENT", "icon-banknote", "APPROV", "icon-check", "RETURN", "icon-undo-2",
+            "REJECT", "icon-ban", "SUBMIT", "icon-send", "PRIORITY", "icon-flag", "PERMISSION", "icon-shield",
+            "COO", "icon-shield", "INVITE", "icon-user-plus", "MEMBER", "icon-user-plus", "USER", "icon-user-plus",
+            "DOCUMENT", "icon-paperclip", "COMMENT", "icon-message-square", "VERIF", "icon-clipboard-check");
+
+    private static final Map<String, String> NOTIFICATION_ICONS = linked(
+            "paid", "icon-banknote", "priority", "icon-flag", "returned", "icon-undo-2", "rejected", "icon-undo-2",
+            "approved", "icon-circle-check", "message", "icon-message-square", "replied", "icon-message-square",
+            "budget", "icon-triangle-alert", "submitted", "icon-inbox", "verified", "icon-inbox");
+
+    private static Map<String, String> linked(String... keyThenValue) {
+        Map<String, String> map = new LinkedHashMap<>();
+        for (int i = 0; i < keyThenValue.length; i += 2) {
+            map.put(keyThenValue[i], keyThenValue[i + 1]);
+        }
+        return map;
     }
 
     public String humanise(String code) {

@@ -1,11 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <body>
-<div th:fragment="flash">
-    <div th:if="${success}" role="status" class="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-900" th:text="${success}">Saved</div>
-    <div th:if="${error}" role="alert" class="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-rose-900" th:text="${error}">Error</div>
-</div>
-
-<div th:fragment="inline-error" role="alert" class="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900" th:text="${message}">Error</div>
+<!-- Error message swapped into the page for HTMX requests (see GlobalExceptionHandler). -->
+<div th:fragment="inline-error" role="alert" class="notice notice-warn"><i class="icon-circle-alert" aria-hidden="true"></i><span th:text="${message}">Error</span></div>
 </body>
 </html>
