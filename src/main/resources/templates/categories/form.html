@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Add / edit a category; used on the categories page (screen 14). -->
+<form th:fragment="categoryForm(c)" th:action="@{/categories}" method="post" style="display:flex;flex-direction:column;gap:12px"
+      th:with="p=${c == null ? 'new' : c.id()}">
+    <input type="hidden" name="id" th:value="${c?.id()}">
+    <div class="field"><label th:for="'name-' + ${p}">Name</label><input class="input" th:id="'name-' + ${p}" name="name" th:value="${c?.name()}" required></div>
+    <div class="field"><label th:for="'desc-' + ${p}">Rule shown to teams</label>
+        <textarea class="input" th:id="'desc-' + ${p}" name="description" style="min-height:72px" required th:text="${c?.description()}"></textarea></div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px 20px">
+        <label class="check"><input type="checkbox" name="allowed" value="true" th:checked="${c == null or c.allowed()}">Reimbursable</label>
+        <label class="check"><input type="checkbox" name="requiresPreApproval" value="true" th:checked="${c?.requiresPreApproval()}">Requires pre-approval</label>
+        <label class="check"><input type="checkbox" name="preApprovalRecommended" value="true" th:checked="${c?.preApprovalRecommended()}">Pre-approval recommended</label>
+        <label class="check"><input type="checkbox" name="justificationRequired" value="true" th:checked="${c?.justificationRequired()}">Detailed justification</label>
+        <label class="check"><input type="checkbox" name="active" value="true" th:checked="${c == null or c.active()}">Active</label>
+    </div>
+    <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+        <div class="field" style="width:120px"><label th:for="'sort-' + ${p}">Sort order</label><input class="input" th:id="'sort-' + ${p}" name="sortOrder" type="number" th:value="${c?.sortOrder() ?: 0}"></div>
+        <button class="btn btn-primary" style="min-height:44px">Save category</button>
+    </div>
+</form>
+</body>
+</html>

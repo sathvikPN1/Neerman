@@ -1,54 +1,63 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head('Upload documents')}"></head>
+<!-- Not in the design handoff: one-time upload page from the AI connector, built from screen 05's upload box. -->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Upload documents · Nirmaan Reimbursements</title>
+    <link rel="icon" type="image/png" th:href="@{/img/favicon.png}">
+    <link rel="stylesheet" th:href="@{/design/design-system.css}">
+    <link rel="stylesheet" th:href="@{/design/app.css}">
+    <script th:src="@{/js/app.js}" defer></script>
+</head>
 <body>
-<main id="main" class="min-h-screen flex items-start justify-center px-4 py-10">
-    <div class="w-full max-w-lg space-y-4">
-        <div class="flex items-center gap-3">
-            <img th:src="@{/img/nirmaan-logo.png}" alt="" class="h-10 w-10" width="40" height="40">
-            <h1 class="text-lg font-semibold">Upload documents for your claim</h1>
-        </div>
-        <div th:replace="~{fragments/flash :: flash}"></div>
+<main id="main" style="background:var(--color-bg);min-height:100vh;border-top:3px solid var(--color-accent-500)">
+    <div style="display:flex;align-items:center;gap:10px;padding:12px 20px;background:#fff;border-bottom:1px solid var(--color-divider)"><img th:src="@{/design/assets/180fa63b.png}" alt="Nirmaan" style="width:32px;height:32px"><span style="font-family:var(--font-heading);font-weight:600;font-size:18px">Nirmaan <span style="color:var(--color-accent)">Reimbursements</span></span></div>
+    <div style="max-width:560px;margin:0 auto;padding:24px 20px;display:flex;flex-direction:column;gap:16px">
+        <h1 class="page-title" style="font-size:30px">Upload documents for your claim</h1>
+        <div th:if="${success}" role="status" class="notice notice-ok"><i class="icon-circle-check" aria-hidden="true"></i><span th:text="${success}">Saved</span></div>
+        <div th:if="${error}" role="alert" class="notice notice-warn"><i class="icon-circle-alert" aria-hidden="true"></i><span th:text="${error}">Error</span></div>
 
-        <div th:if="${expired}" role="alert" class="card p-5 text-slate-700">
-            <p class="font-medium">This upload link has expired or is invalid.</p>
-            <p class="text-sm mt-1">Upload links work for 30 minutes. Ask your AI assistant for a new one, or upload from the claim page in the Nirmaan app.</p>
+        <div th:if="${expired}" class="blueprint" role="alert" style="padding:24px;background:#fff;display:flex;flex-direction:column;gap:10px">
+            <th:block th:replace="~{fragments/shell :: corners}"></th:block>
+            <i class="icon-link-2-off" style="font-size:32px;color:var(--color-neutral-700)" aria-hidden="true"></i>
+            <h3 style="margin:0">This upload link has expired or is invalid</h3>
+            <p style="margin:0;font-size:14px;color:var(--color-neutral-800)">Upload links work for 30 minutes. Ask your AI assistant for a new one, or upload from the claim page in the Nirmaan app.</p>
         </div>
 
         <th:block th:unless="${expired}">
-            <section class="card p-5">
-                <p class="text-sm text-slate-500" th:text="${claim.publicCode()}">NRM-2026-00001</p>
-                <p class="text-lg font-semibold"><span th:text="${claim.vendorName()}">Vendor</span> · <span th:text="${@fmt.inr(claim.claimedAmount())}"></span></p>
-                <p class="text-sm text-slate-600"><span th:text="${claim.teamName()}"></span> · <span th:text="${claim.categoryName()}"></span>
-                    · <span th:replace="~{fragments/layout :: status(${claim.status()})}"></span></p>
-            </section>
-
-            <section class="card p-5 space-y-3" th:if="${claim.editable()}">
-                <h2 class="font-semibold">Attached</h2>
-                <p th:if="${claim.documents().isEmpty()}" class="text-sm text-slate-500">Nothing attached yet.</p>
-                <ul class="text-sm space-y-1">
-                    <li th:each="d : ${claim.documents()}">✓ <strong th:text="${d.type().label()}"></strong> · <span th:text="${d.originalFilename()}"></span></li>
-                </ul>
-                <form th:action="@{/upload/{t}(t=${token})}" method="post" enctype="multipart/form-data" class="space-y-3 border-t pt-3">
-                    <div>
-                        <label class="label" for="type">What is this file?</label>
-                        <select class="input" id="type" name="type">
-                            <option value="INVOICE">Invoice (real tax invoice, not pro-forma)</option>
-                            <option value="PAYMENT_PROOF">Payment proof (UPI screenshot, bank statement, card slip)</option>
-                            <option value="OTHER">Other attachment</option>
-                        </select>
+            <div class="panel" style="gap:4px">
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="font:500 13px 'JetBrains Mono'" th:text="${claim.publicCode()}">NRM-2026-00001</span>
+                    <span th:replace="~{fragments/shell :: status(${claim.status()})}"></span></div>
+                <b style="font-size:18px" th:text="${claim.vendorName()} + ' · ' + ${@fmt.inr(claim.claimedAmount())}">Vendor · ₹</b>
+                <span class="muted-sm" th:text="${claim.teamName()} + ' · ' + ${claim.categoryName()}"></span>
+            </div>
+            <th:block th:if="${claim.editable()}">
+                <div th:each="d : ${claim.documents()}" style="display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--color-divider);background:#fff">
+                    <i class="icon-circle-check" style="font-size:22px;color:var(--color-accent)" aria-hidden="true"></i>
+                    <div style="flex:1;display:flex;flex-direction:column;font-size:14px;min-width:0"><b style="overflow-wrap:anywhere" th:text="${d.originalFilename()}">invoice.pdf</b><span class="text-muted" style="font-size:12px" th:text="${d.type().label()}">Invoice</span></div>
+                </div>
+                <form th:action="@{/upload/{t}(t=${token})}" method="post" enctype="multipart/form-data" data-autosubmit
+                      class="blueprint" style="padding:22px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;background:#fff;border-style:dashed">
+                    <th:block th:replace="~{fragments/shell :: corners}"></th:block>
+                    <i class="icon-upload" style="font-size:26px;color:var(--color-accent)" aria-hidden="true"></i><b>Add a file</b>
+                    <span class="text-muted" style="font-size:13px">PDF, JPG, PNG or HEIC up to 10 MB. On a phone you can take a photo.</span>
+                    <label for="type" class="hidden">What is this file?</label>
+                    <select class="input" id="type" name="type" style="max-width:340px;min-height:40px">
+                        <option value="INVOICE">Tax invoice (not pro-forma)</option>
+                        <option value="PAYMENT_PROOF">Payment proof (UPI, bank statement, card slip)</option>
+                        <option value="OTHER">Other attachment</option>
+                    </select>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+                        <label class="btn btn-secondary" style="min-height:44px"><i class="icon-camera" aria-hidden="true"></i>Take photo<input type="file" name="file" accept="image/*" capture="environment" class="hidden"></label>
+                        <label class="btn btn-secondary" style="min-height:44px"><i class="icon-folder-open" aria-hidden="true"></i>Choose file<input type="file" name="file" accept=".pdf,.jpg,.jpeg,.png,.heic,application/pdf,image/*" class="hidden"></label>
                     </div>
-                    <div>
-                        <label class="label" for="file">File</label>
-                        <input class="input" id="file" name="file" type="file" accept=".pdf,.jpg,.jpeg,.png,.heic,application/pdf,image/*" required>
-                        <p class="hint">PDF, JPG, PNG or HEIC, up to 10 MB.</p>
-                    </div>
-                    <button class="btn btn-primary w-full">Upload</button>
+                    <noscript><button class="btn btn-primary">Upload</button></noscript>
                 </form>
-            </section>
-            <p th:unless="${claim.editable()}" class="card p-5 text-sm">This claim is no longer a draft, so documents can't be added here.</p>
-            <p class="text-sm text-slate-600">When both documents are attached, review the claim and press <strong>Submit</strong> in the Nirmaan app.
-                <a class="text-brand-700 underline" th:href="@{/claims/{id}/edit(id=${claim.id()})}">Open the claim</a> (sign-in required).</p>
+            </th:block>
+            <div th:unless="${claim.editable()}" class="notice notice-warn"><i class="icon-info" aria-hidden="true"></i><span>This claim is no longer a draft, so documents can't be added here.</span></div>
+            <p style="margin:0;font-size:14px;color:var(--color-neutral-800)">When both documents are attached, review the claim and press <b>Submit</b> in the Nirmaan app.
+                <a th:href="@{/claims/{id}/edit(id=${claim.id()})}">Open the claim</a> (sign-in required).</p>
         </th:block>
     </div>
 </main>

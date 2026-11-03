@@ -21,7 +21,7 @@
      style="flex:1 1 260px;padding:18px;background:#fff;display:flex;flex-direction:column;gap:10px"
      th:with="left=${budget.remainingAfterPending()}, hasAmount=${amount != null and amount.signum() > 0},
               usedPct=${@fmt.percent(budget.committed().add(budget.pending()), budget.total())},
-              addPct=${hasAmount} ? ${T(java.lang.Math).min(@fmt.percent(amount, budget.total()), T(java.lang.Math).max(0, 100 - usedPct))} : 0">
+              addPct=${hasAmount} ? ${@fmt.addedPercent(amount, budget.total(), usedPct)} : 0">
     <th:block th:replace="~{fragments/shell :: corners}"></th:block>
     <span class="card-kicker">Budget impact</span>
     <span style="font:600 28px var(--font-heading)" th:text="${hasAmount} ? ${@fmt.inrWhole(amount)} + ' of ' + ${@fmt.inrWhole(left)} + ' left' : ${@fmt.inrWhole(left)} + ' left'">₹18,450 of ₹37,550 left</span>

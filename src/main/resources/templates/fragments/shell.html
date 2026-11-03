@@ -2,7 +2,7 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <!--
   App shell of the redesign (design handoff, screens 04–18): dark sidebar on web, brand bar + tabs on phone.
-  Pages that have been redesigned use these fragments; the rest still use fragments/layout.
+  Every signed-in page uses these fragments.
   Usage:
     <head th:replace="~{fragments/shell :: head('Our claims')}"></head>
     <body th:replace="~{fragments/shell :: page('claims', ~{::#content})}"><div id="content">…</div></body>
