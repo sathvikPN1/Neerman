@@ -2,6 +2,8 @@ package com.nirmaan.reimburse.web;
 
 import com.nirmaan.reimburse.category.CategoryService;
 import com.nirmaan.reimburse.claim.ClaimQueueService;
+import com.nirmaan.reimburse.claim.ClaimRow;
+import com.nirmaan.reimburse.claim.ClaimSearch;
 import com.nirmaan.reimburse.claim.ClaimStatus;
 import com.nirmaan.reimburse.claim.QueueFilter;
 import com.nirmaan.reimburse.cohort.CohortService;
@@ -11,6 +13,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+
+import java.util.List;
 
 @Controller
 public class StaffQueueController {
@@ -35,10 +39,23 @@ public class StaffQueueController {
                         @RequestParam(required = false) Long cohortId,
                         @RequestParam(required = false) Long categoryId,
                         @RequestParam(required = false) Integer minAgeDays,
+                        @RequestParam(required = false) String q,
+                        @RequestParam(required = false) String only,
                         Model model) {
         QueueFilter filter = new QueueFilter(status, teamId, cohortId, categoryId, minAgeDays);
+        List<ClaimRow> found = ClaimSearch.filter(queues.staffQueue(filter), q);
         model.addAttribute("filter", filter);
-        model.addAttribute("rows", queues.staffQueue(filter));
+        model.addAttribute("q", q == null ? "" : q.trim());
+        model.addAttribute("only", only == null ? "" : only);
+        model.addAttribute("allCount", found.size());
+        model.addAttribute("priorityCount", found.stream().filter(ClaimRow::priority).count());
+        model.addAttribute("requestedCount", found.stream().filter(ClaimRow::priorityRequested).count());
+        // Tabs above the list: everything, priority only, or priority requested by the team.
+        model.addAttribute("rows", switch (only == null ? "" : only) {
+            case "priority" -> found.stream().filter(ClaimRow::priority).toList();
+            case "requested" -> found.stream().filter(ClaimRow::priorityRequested).toList();
+            default -> found;
+        });
         model.addAttribute("statuses", ClaimStatus.values());
         model.addAttribute("teams", teams.list());
         model.addAttribute("cohorts", cohorts.list());

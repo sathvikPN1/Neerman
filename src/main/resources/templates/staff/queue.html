@@ -1,56 +1,70 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head('Verification queue')}"></head>
-<body>
-<div th:replace="~{fragments/layout :: nav}"></div>
-<main id="main" class="max-w-6xl mx-auto px-4 py-6 space-y-4">
-    <div th:replace="~{fragments/flash :: flash}"></div>
-    <h1 class="text-2xl font-semibold">Verification queue</h1>
-
-    <form method="get" class="card p-3 grid grid-cols-2 md:grid-cols-6 gap-2 items-end" aria-label="Filters">
-        <div><label class="label" for="status">Status</label>
-            <select class="input" id="status" name="status">
-                <option value="">Submitted (default)</option>
-                <option th:each="s : ${statuses}" th:value="${s}" th:text="${s.label()}" th:selected="${filter.status() == s}"></option>
-            </select></div>
-        <div><label class="label" for="teamId">Team</label>
-            <select class="input" id="teamId" name="teamId"><option value="">All</option>
-                <option th:each="t : ${teams}" th:value="${t.id()}" th:text="${t.name()}" th:selected="${filter.teamId() == t.id()}"></option></select></div>
-        <div><label class="label" for="cohortId">Cohort</label>
-            <select class="input" id="cohortId" name="cohortId"><option value="">All</option>
-                <option th:each="c : ${cohorts}" th:value="${c.id()}" th:text="${c.name()}" th:selected="${filter.cohortId() == c.id()}"></option></select></div>
-        <div><label class="label" for="categoryId">Category</label>
-            <select class="input" id="categoryId" name="categoryId"><option value="">All</option>
-                <option th:each="c : ${categories}" th:value="${c.id()}" th:text="${c.name()}" th:selected="${filter.categoryId() == c.id()}"></option></select></div>
-        <div><label class="label" for="minAgeDays">Waiting at least</label>
-            <select class="input" id="minAgeDays" name="minAgeDays"><option value="">Any time</option>
-                <option th:each="d : ${ {2, 5, 10} }" th:value="${d}" th:text="${d} + ' days'" th:selected="${filter.minAgeDays() == d}"></option></select></div>
-        <button class="btn btn-primary">Apply</button>
-    </form>
-
-    <div th:if="${rows.isEmpty()}" class="card p-10 text-center text-slate-600">
-        <p class="font-medium">Nothing waiting here. 🎉</p>
-        <p class="text-sm">New submissions will appear automatically, priority claims first.</p>
+<!-- Screen 07 of the design handoff: claims waiting for staff, priority first, then oldest. -->
+<head th:replace="~{fragments/shell :: head('Verification queue')}"></head>
+<body th:replace="~{fragments/shell :: page('verify', ~{::#content})}">
+<div id="content" style="display:contents">
+    <div class="page-head">
+        <div><h1 class="page-title">Verification queue</h1>
+            <span class="text-muted" th:text="${allCount} + ' to check · priority first · oldest next'">5 to check · priority first · oldest next</span></div>
+        <form method="get" role="search" class="search-box" style="flex:0 1 300px">
+            <i class="icon-search" aria-hidden="true"></i><label for="queue-q" class="hidden">Search the queue</label>
+            <input id="queue-q" name="q" type="search" placeholder="Claim ID, team or vendor" th:value="${q}">
+            <input th:if="${filter.status() != null}" type="hidden" name="status" th:value="${filter.status()}">
+            <input th:if="${filter.teamId() != null}" type="hidden" name="teamId" th:value="${filter.teamId()}">
+            <input th:if="${filter.cohortId() != null}" type="hidden" name="cohortId" th:value="${filter.cohortId()}">
+            <input th:if="${filter.categoryId() != null}" type="hidden" name="categoryId" th:value="${filter.categoryId()}">
+            <input th:if="${filter.minAgeDays() != null}" type="hidden" name="minAgeDays" th:value="${filter.minAgeDays()}">
+        </form>
     </div>
 
-    <div th:unless="${rows.isEmpty()}" class="card overflow-x-auto">
-        <table class="table w-full text-sm">
-            <thead><tr><th>Claim</th><th>Team</th><th>Category</th><th class="text-right">Amount</th><th>Waiting</th><th>Status</th></tr></thead>
-            <tbody>
-            <tr th:each="r : ${rows}" th:classappend="${r.priority()} ? 'bg-rose-50/50'">
-                <td><a class="text-brand-700 underline font-medium" th:href="@{/claims/{id}(id=${r.id()})}" th:text="${r.publicCode()}"></a>
-                    <div class="text-xs text-slate-500" th:text="${r.vendorName()}"></div>
-                    <th:block th:if="${r.priority()}"><span th:replace="~{fragments/layout :: priority}"></span></th:block>
-                    <span th:if="${r.priorityRequested()}" class="chip bg-amber-100 text-amber-900">Priority requested</span></td>
-                <td><span th:text="${r.teamName()}"></span><div class="text-xs text-slate-500" th:text="${r.cohortName()}"></div></td>
-                <td th:text="${r.categoryName()}"></td>
-                <td class="text-right font-semibold" th:text="${@fmt.inr(r.claimedAmount())}"></td>
-                <td th:text="${@fmt.age(r.stageEnteredAt())}"></td>
-                <td><span th:replace="~{fragments/layout :: status(${r.status()})}"></span></td>
-            </tr>
-            </tbody>
-        </table>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+        <nav class="seg" style="background:#fff" aria-label="Show">
+            <a class="seg-opt" th:href="@{/staff/queue(q=${q},status=${filter.status()},teamId=${filter.teamId()},cohortId=${filter.cohortId()},categoryId=${filter.categoryId()},minAgeDays=${filter.minAgeDays()})}"
+               th:attr="aria-current=${only == ''} ? 'page'" th:text="'All · ' + ${allCount}">All · 5</a>
+            <a class="seg-opt" th:href="@{/staff/queue(only='priority',q=${q},status=${filter.status()},teamId=${filter.teamId()},cohortId=${filter.cohortId()},categoryId=${filter.categoryId()},minAgeDays=${filter.minAgeDays()})}"
+               th:attr="aria-current=${only == 'priority'} ? 'page'" th:text="'Priority · ' + ${priorityCount}">Priority · 1</a>
+            <a class="seg-opt" th:href="@{/staff/queue(only='requested',q=${q},status=${filter.status()},teamId=${filter.teamId()},cohortId=${filter.cohortId()},categoryId=${filter.categoryId()},minAgeDays=${filter.minAgeDays()})}"
+               th:attr="aria-current=${only == 'requested'} ? 'page'" th:text="'Priority requested · ' + ${requestedCount}">Priority requested · 0</a>
+        </nav>
+        <details th:attr="open=${filter.status() != null or filter.teamId() != null or filter.cohortId() != null or filter.categoryId() != null or filter.minAgeDays() != null} ? 'open'">
+            <summary class="text-link" style="font-size:14px">More filters</summary>
+            <form method="get" class="form-grid-sm" style="margin-top:10px" aria-label="Filters">
+                <input type="hidden" name="q" th:value="${q}"><input th:if="${only != ''}" type="hidden" name="only" th:value="${only}">
+                <div class="field"><label for="status">Status</label>
+                    <select class="input" id="status" name="status"><option value="">Submitted (default)</option>
+                        <option th:each="s : ${statuses}" th:value="${s}" th:text="${s.label()}" th:selected="${filter.status() == s}"></option></select></div>
+                <div class="field"><label for="teamId">Team</label>
+                    <select class="input" id="teamId" name="teamId"><option value="">All</option>
+                        <option th:each="t : ${teams}" th:value="${t.id()}" th:text="${t.name()}" th:selected="${filter.teamId() == t.id()}"></option></select></div>
+                <div class="field"><label for="cohortId">Cohort</label>
+                    <select class="input" id="cohortId" name="cohortId"><option value="">All</option>
+                        <option th:each="c : ${cohorts}" th:value="${c.id()}" th:text="${c.name()}" th:selected="${filter.cohortId() == c.id()}"></option></select></div>
+                <div class="field"><label for="categoryId">Category</label>
+                    <select class="input" id="categoryId" name="categoryId"><option value="">All</option>
+                        <option th:each="c : ${categories}" th:value="${c.id()}" th:text="${c.name()}" th:selected="${filter.categoryId() == c.id()}"></option></select></div>
+                <div class="field"><label for="minAgeDays">Waiting at least</label>
+                    <select class="input" id="minAgeDays" name="minAgeDays"><option value="">Any time</option>
+                        <option th:each="d : ${ {2, 5, 10} }" th:value="${d}" th:text="${d} + ' days'" th:selected="${filter.minAgeDays() == d}"></option></select></div>
+                <button class="btn btn-primary" style="min-height:44px">Apply</button>
+            </form>
+        </details>
     </div>
-</main>
+
+    <div class="list">
+        <div th:if="${rows.isEmpty()}" class="empty"><b>Nothing waiting here.</b><span class="muted-sm">New submissions appear here, priority claims first.</span></div>
+        <div th:each="r : ${rows}" class="list-row" th:classappend="${r.priority()} ? 'edge-priority'">
+            <div style="flex:1 1 240px;display:flex;flex-direction:column;gap:3px;min-width:0">
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="font:500 13px 'JetBrains Mono'" th:text="${r.publicCode()}">NRM-2026-00003</span>
+                    <span th:if="${r.priority()}" class="tag tag-priority" style="padding:1px 7px">Priority</span>
+                    <span th:if="${r.priorityRequested()}" class="tag tag-warn" style="padding:1px 7px">Priority requested</span>
+                    <th:block th:if="${r.status().name() != 'SUBMITTED'}"><span th:replace="~{fragments/shell :: status(${r.status()})}"></span></th:block></div>
+                <span style="font-weight:600" th:text="${r.teamName()} + ' · ' + ${r.vendorName()}">MedTrack · Autodesk India</span>
+                <span class="muted-sm" th:text="${r.categoryName()} + ' · ' + ${r.cohortName()} + ' · waiting ' + ${@fmt.age(r.stageEnteredAt())}">Software · submitted 2 days ago</span></div>
+            <span class="amount" th:text="${@fmt.inr(r.claimedAmount())}">₹12,999.00</span>
+            <a th:href="@{/claims/{id}(id=${r.id()})}" class="btn btn-secondary" style="min-height:40px">Review<i class="icon-chevron-right" aria-hidden="true"></i></a>
+        </div>
+    </div>
+</div>
 </body>
 </html>

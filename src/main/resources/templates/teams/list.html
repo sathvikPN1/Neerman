@@ -1,32 +1,44 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head th:replace="~{fragments/layout :: head('Teams')}"></head>
-<body>
-<div th:replace="~{fragments/layout :: nav}"></div>
-<main id="main" class="max-w-6xl mx-auto px-4 py-6 space-y-4">
-    <div th:replace="~{fragments/flash :: flash}"></div>
-    <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-semibold">Teams</h1>
-        <a sec:authorize="hasAuthority('TEAM_MANAGE')" th:href="@{/teams/new}" class="btn btn-primary">+ New team</a>
+<!-- Screen 10 of the design handoff: all teams with their budget use. -->
+<head th:replace="~{fragments/shell :: head('Teams')}"></head>
+<body th:replace="~{fragments/shell :: page('teams', ~{::#content})}">
+<div id="content" style="display:contents">
+    <div class="page-head">
+        <div><h1 class="page-title">Teams</h1>
+            <span class="text-muted" th:text="${totalTeams} + (${totalTeams == 1} ? ' team · ' : ' teams · ') + ${cohorts.size()} + (${cohorts.size() == 1} ? ' cohort' : ' cohorts')">5 teams · 2 cohorts</span></div>
+        <a sec:authorize="hasAuthority('TEAM_MANAGE')" th:href="@{/teams/new}" class="btn btn-primary" style="min-height:44px"><i class="icon-plus" aria-hidden="true"></i>New team</a>
     </div>
-    <div th:if="${teams.isEmpty()}" class="card p-10 text-center text-slate-600">No teams yet. Create a cohort first, then add teams.</div>
-    <div th:unless="${teams.isEmpty()}" class="card overflow-x-auto">
-        <table class="table w-full text-sm">
-            <thead><tr><th>Team</th><th>Program</th><th class="text-right">Budget</th><th class="text-right">Approved + paid</th><th class="text-right">Pending</th><th class="text-right">Remaining</th></tr></thead>
-            <tbody>
-            <tr th:each="t : ${teams}">
-                <td><a class="font-medium text-brand-700 underline" th:href="@{/teams/{id}(id=${t.id()})}" th:text="${t.name()}"></a>
-                    <th:block th:if="${t.priority()}"><span th:replace="~{fragments/layout :: priority}"></span></th:block>
-                    <div class="text-xs text-slate-500" th:text="${t.cohortName()} + ' · ' + ${t.memberCount()} + ' member(s)'"></div></td>
-                <td th:text="${t.program().label()}"></td>
-                <td class="text-right" th:text="${@fmt.inr(t.budget().total())}"></td>
-                <td class="text-right" th:text="${@fmt.inr(t.budget().committed())}"></td>
-                <td class="text-right" th:text="${@fmt.inr(t.budget().pending())}"></td>
-                <td class="text-right font-semibold" th:text="${@fmt.inr(t.budget().remaining())}"></td>
-            </tr>
-            </tbody>
-        </table>
+    <form method="get" role="search" style="display:flex;gap:10px;flex-wrap:wrap">
+        <div class="search-box" style="flex:1 1 240px"><i class="icon-search" aria-hidden="true"></i><label for="teams-q" class="hidden">Search teams</label>
+            <input id="teams-q" name="q" type="search" placeholder="Search teams" th:value="${q}"></div>
+        <label for="teams-cohort" class="hidden">Cohort</label>
+        <select id="teams-cohort" name="cohortId" class="input" style="min-height:44px;flex:0 1 200px" onchange="this.form.submit()">
+            <option value="">All cohorts</option>
+            <option th:each="c : ${cohorts}" th:value="${c.id()}" th:text="${c.name()}" th:selected="${cohortId == c.id()}"></option>
+        </select>
+        <noscript><button class="btn btn-secondary" style="min-height:44px">Filter</button></noscript>
+    </form>
+
+    <div th:if="${teams.isEmpty()}" class="list"><div class="empty">
+        <b th:text="${totalTeams == 0} ? 'No teams yet.' : 'No teams match.'">No teams yet.</b>
+        <span th:if="${totalTeams == 0}" class="muted-sm">Create a cohort first, then add teams.</span></div></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px">
+        <a th:each="t : ${teams}" th:href="@{/teams/{id}(id=${t.id()})}" class="blueprint row-link" style="background:#fff;padding:16px;display:flex;flex-direction:column;gap:10px"
+           th:with="b=${t.budget()}, used=${b.committed().add(b.pending())}, pct=${@fmt.percent(used, b.total())}">
+            <th:block th:replace="~{fragments/shell :: corners}"></th:block>
+            <div style="display:flex;justify-content:space-between;gap:8px">
+                <div style="display:flex;flex-direction:column"><span class="card-title" style="font-size:20px" th:text="${t.name()}">MedTrack</span>
+                    <span class="text-muted" style="font-size:13px" th:text="${t.cohortName()} + ' · ' + ${t.program().label()} + ' · ' + ${t.memberCount()} + (${t.memberCount() == 1} ? ' member' : ' members')">Cohort 2026-A · 4 members</span></div>
+                <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+                    <span th:if="${t.priority()}" class="tag tag-priority" style="padding:1px 7px">Priority</span>
+                    <span th:if="${b.pending().signum() > 0}" class="tag tag-accent" th:text="${@fmt.inrWhole(b.pending())} + ' in review'">2 open</span></div>
+            </div>
+            <div class="bar bar-thin" aria-hidden="true"><span th:class="${pct > 85} ? 'warn' : 'used'" th:style="'width:' + ${pct > 100 ? 100 : pct} + '%'"></span></div>
+            <div style="display:flex;justify-content:space-between;font-size:13px"><span th:text="${pct} + '% of budget'">62% of budget</span>
+                <span class="mono" th:text="${@fmt.inrWhole(used)} + ' / ' + ${@fmt.inrWhole(b.total())}">₹62,450 / ₹1,00,000</span></div>
+        </a>
     </div>
-</main>
+</div>
 </body>
 </html>

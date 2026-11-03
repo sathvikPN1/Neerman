@@ -8,6 +8,7 @@ import com.nirmaan.reimburse.team.Program;
 import com.nirmaan.reimburse.team.TeamDetail;
 import com.nirmaan.reimburse.team.TeamForm;
 import com.nirmaan.reimburse.team.TeamService;
+import com.nirmaan.reimburse.team.TeamSummary;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
@@ -19,6 +20,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.util.List;
+import java.util.Locale;
 
 @Controller
 public class TeamAdminController {
@@ -35,8 +39,18 @@ public class TeamAdminController {
 
     @GetMapping("/teams")
     @PreAuthorize("!hasRole('TEAM_MEMBER')")
-    public String list(Model model) {
-        model.addAttribute("teams", teams.list());
+    public String list(@RequestParam(required = false) String q, @RequestParam(required = false) Long cohortId,
+                       Model model) {
+        List<TeamSummary> all = teams.list();
+        String needle = q == null ? "" : q.trim().toLowerCase(Locale.ROOT);
+        model.addAttribute("teams", all.stream()
+                .filter(t -> cohortId == null || cohortId.equals(t.cohortId()))
+                .filter(t -> needle.isEmpty() || t.name().toLowerCase(Locale.ROOT).contains(needle))
+                .toList());
+        model.addAttribute("totalTeams", all.size());
+        model.addAttribute("cohorts", cohorts.list());
+        model.addAttribute("q", q == null ? "" : q.trim());
+        model.addAttribute("cohortId", cohortId);
         return "teams/list";
     }
 
