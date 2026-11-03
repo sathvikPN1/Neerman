@@ -39,6 +39,6 @@ public class NotificationController {
     @GetMapping("/notifications/badge")
     public String badge(Model model) {
         model.addAttribute("unreadCount", notifications.unreadCount(CurrentUser.require().id()));
-        return "fragments/layout :: badge";
+        return "fragments/shell :: bellCount";
     }
 }

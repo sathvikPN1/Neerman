@@ -1,24 +1,47 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <body>
-<div th:fragment="warnings" id="warnings" aria-live="polite" class="space-y-2">
-    <div th:each="w : ${warnings}" role="alert"
-         th:class="${w.blocking()} ? 'rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-sm text-rose-900' : 'rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900'">
-        <strong th:text="${w.blocking()} ? 'Cannot submit: ' : 'Note: '"></strong><span th:text="${w.message()}"></span>
+<!-- Live rule warnings on the claim form and claim detail. Blocking ones stop submission. -->
+<div th:fragment="warnings" id="warnings" aria-live="polite" style="display:flex;flex-direction:column;gap:8px">
+    <div th:each="w : ${warnings}" role="alert" class="notice"
+         th:style="${w.blocking()} ? 'background:#FBE4E5;color:#A3212B' : 'background:#FFF3D6;color:#6B4600'">
+        <i th:class="${w.blocking()} ? 'icon-octagon-alert' : 'icon-triangle-alert'" aria-hidden="true"></i>
+        <span><b th:text="${w.blocking()} ? 'Cannot submit: ' : 'Note: '"></b><span th:text="${w.message()}"></span></span>
     </div>
 </div>
 
-<div th:fragment="comments" id="comments-list">
-    <p th:if="${comments.isEmpty()}" class="text-sm text-slate-500">No messages yet. Ask a question or add context here instead of email.</p>
-    <ol class="space-y-3">
-        <li th:each="c : ${comments}" class="flex" th:classappend="${c.mine()} ? 'justify-end'">
-            <div class="max-w-[85%] rounded-xl px-3 py-2" th:classappend="${c.mine()} ? 'bg-brand-50 border border-brand-100' : 'bg-slate-50 border border-slate-200'">
-                <p class="text-xs text-slate-600"><strong th:text="${c.authorName()}">Name</strong>
-                    <span th:text="'· ' + ${c.authorRole()}"></span> · <time th:text="${@fmt.dateTime(c.createdAt())}"></time></p>
-                <p class="mt-1 whitespace-pre-line text-sm" th:text="${c.body()}">Message</p>
-            </div>
-        </li>
-    </ol>
+<!-- HTMX response while the team types: new warnings, plus the budget panel swapped out of band. -->
+<th:block th:fragment="liveChecks">
+    <div th:replace="~{claims/fragments :: warnings}"></div>
+    <th:block th:if="${budget != null}"><div th:replace="~{claims/fragments :: budgetImpact(${budget}, ${impactAmount}, true)}"></div></th:block>
+</th:block>
+
+<!-- "Budget impact" side panel of screen 05. "Left" counts claims still in review as spent. -->
+<div th:fragment="budgetImpact(budget, amount, oob)" id="budget-impact" class="blueprint" th:attr="hx-swap-oob=${oob} ? 'true'"
+     style="flex:1 1 260px;padding:18px;background:#fff;display:flex;flex-direction:column;gap:10px"
+     th:with="left=${budget.remainingAfterPending()}, hasAmount=${amount != null and amount.signum() > 0},
+              usedPct=${@fmt.percent(budget.committed().add(budget.pending()), budget.total())},
+              addPct=${hasAmount} ? ${T(java.lang.Math).min(@fmt.percent(amount, budget.total()), T(java.lang.Math).max(0, 100 - usedPct))} : 0">
+    <th:block th:replace="~{fragments/shell :: corners}"></th:block>
+    <span class="card-kicker">Budget impact</span>
+    <span style="font:600 28px var(--font-heading)" th:text="${hasAmount} ? ${@fmt.inrWhole(amount)} + ' of ' + ${@fmt.inrWhole(left)} + ' left' : ${@fmt.inrWhole(left)} + ' left'">₹18,450 of ₹37,550 left</span>
+    <div class="bar" aria-hidden="true"><span class="used" th:style="'width:' + ${usedPct} + '%'"></span><span class="adding" th:style="'width:' + ${addPct} + '%'"></span></div>
+    <span th:if="${hasAmount}" style="font-size:13px;color:var(--color-neutral-800)"
+          th:with="after=${left.subtract(amount)}"
+          th:text="'After this claim: ' + ${@fmt.inrWhole(after)} + ' left (' + ${@fmt.percent(after, budget.total())} + '%).'">After this claim: ₹19,100 left (19%).</span>
+    <span th:unless="${hasAmount}" style="font-size:13px;color:var(--color-neutral-800)">Enter the amount to see what is left after this claim.</span>
+    <div style="border-top:1px solid var(--color-divider);padding-top:10px;font-size:13px;color:var(--color-neutral-800);display:flex;flex-direction:column;gap:6px"><b style="color:var(--color-text)">What happens next</b><span>1. Staff check the invoice (about 2 working days)</span><span>2. The COO approves</span><span>3. Finance pays to your bank account</span></div>
+</div>
+
+<!-- Message thread on a claim (screen 06). -->
+<div th:fragment="comments" id="comments-list" style="display:flex;flex-direction:column;gap:10px">
+    <p th:if="${comments.isEmpty()}" class="muted-sm" style="margin:0">No messages yet. Ask a question or add context here instead of email.</p>
+    <div th:each="c : ${comments}" style="display:flex;gap:10px;padding:12px;border:1px solid var(--color-divider)"
+         th:style="'display:flex;gap:10px;padding:12px;border:1px solid var(--color-divider);background:' + (${c.mine()} ? 'var(--color-accent-100)' : '#fff')">
+        <span class="avatar avatar-light" th:text="${@fmt.initials(c.authorName())}" aria-hidden="true">RM</span>
+        <div style="display:flex;flex-direction:column;gap:2px;font-size:14px;min-width:0"><span><b th:text="${c.authorName()}">Rahul Menon</b> <span class="text-muted" style="font-size:12px" th:text="${c.authorRole()} + ' · ' + ${@fmt.dateTime(c.createdAt())}">Staff · 27 Oct, 10:14 am</span></span>
+            <span style="white-space:pre-line;overflow-wrap:anywhere" th:text="${c.body()}">Message</span></div>
+    </div>
 </div>
 </body>
 </html>

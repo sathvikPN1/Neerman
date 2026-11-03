@@ -1,13 +1,34 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head(${status == 403 ? 'Not allowed' : (status == 404 ? 'Not found' : 'Error')})}"></head>
+<!-- Screen 03 of the design handoff: 404 / 403 / 500 and other errors. -->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="(${status} ?: 'Error') + ' · Nirmaan Reimbursements'">Error · Nirmaan Reimbursements</title>
+    <link rel="icon" type="image/png" th:href="@{/img/favicon.png}">
+    <link rel="stylesheet" th:href="@{/design/design-system.css}">
+    <link rel="stylesheet" th:href="@{/design/app.css}">
+</head>
 <body>
-<div th:replace="~{fragments/layout :: nav}"></div>
-<main id="main" class="max-w-xl mx-auto px-4 py-12 text-center">
-    <p class="text-5xl font-bold text-slate-300" th:text="${status}">404</p>
-    <h1 class="mt-2 text-lg font-semibold" th:text="${status == 403 ? 'Not allowed' : (status == 404 ? 'Not found' : 'Something went wrong')}">Error</h1>
-    <p class="mt-2 text-slate-600" th:text="${message ?: 'Please try again.'}">Message</p>
-    <a th:href="@{/}" class="btn btn-primary mt-6">Go to my home page</a>
-</main>
+<div style="background:var(--color-bg);min-height:100vh;border-top:3px solid var(--color-accent-500)"
+     th:with="code=${status == null ? 500 : status},
+              title=${code == 404 ? 'Page not found' : (code == 403 ? 'You don''t have access' : (code >= 500 ? 'Something broke on our side' : 'Nothing to show here'))},
+              text=${code == 404 ? 'The link may be old, or the claim was moved. Check the address or go back to your dashboard.'
+                    : (code == 403 ? 'Your role can''t open this page.' : 'Try again in a minute.')}">
+    <div style="display:flex;align-items:center;gap:10px;padding:12px 20px;background:#fff;border-bottom:1px solid var(--color-divider)">
+        <a th:href="@{/}" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit"><img th:src="@{/design/assets/180fa63b.png}" alt="Nirmaan" style="width:32px;height:32px"><span style="font-family:var(--font-heading);font-weight:600;font-size:18px">Nirmaan <span style="color:var(--color-accent)">Reimbursements</span></span></a>
+    </div>
+    <main id="main" style="padding:56px 24px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px">
+        <div th:if="${code >= 400}" style="font:600 96px/1 var(--font-heading);color:var(--color-accent)" th:text="${code}">404</div>
+        <h3 style="margin:0" th:text="${title}">Page not found</h3>
+        <!-- A specific message from the app (e.g. "You are not part of a team yet") replaces the generic text. -->
+        <p style="margin:0;max-width:380px;color:var(--color-neutral-800)"
+           th:text="${message != null and !#strings.isEmpty(message) and code < 500 and message != 'No message available'} ? ${message} : ${text}">The link may be old, or the claim was moved.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+            <a th:href="@{/}" class="btn btn-primary" style="min-height:44px">Back to dashboard</a>
+            <button type="button" class="btn btn-secondary" style="min-height:44px" onclick="history.back()">Go back</button>
+        </div>
+    </main>
+</div>
 </body>
 </html>

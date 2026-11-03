@@ -28,6 +28,11 @@ public class ViewHelpers {
         return Money.formatInrWhole(amount);
     }
 
+    /** Whole-number percentage of part in total (0 when total is zero). */
+    public int percent(BigDecimal part, BigDecimal total) {
+        return Money.percent(part, total);
+    }
+
     public String shortDate(LocalDate date) {
         return TimeFormats.shortDate(date);
     }

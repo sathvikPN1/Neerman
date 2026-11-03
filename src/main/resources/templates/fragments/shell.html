@@ -16,8 +16,22 @@
     <link rel="icon" type="image/png" th:href="@{/img/favicon.png}">
     <link rel="stylesheet" th:href="@{/design/design-system.css}">
     <link rel="stylesheet" th:href="@{/design/app.css}">
+    <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
     <script th:src="@{/js/app.js}" defer></script>
 </head>
+
+<!-- Registration marks on a .blueprint box (design-system.css draws them). -->
+<th:block th:fragment="corners"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i></th:block>
+
+<!-- Claim status tag in the design's colours. -->
+<span th:fragment="status(status)" class="tag" th:style="${@fmt.statusTagStyle(status)} + ';font-weight:600'" th:text="${status.label()}">Submitted</span>
+
+<span th:fragment="priority" class="tag tag-priority"><i class="icon-flag" aria-hidden="true"></i>Priority</span>
+
+<!-- Unread count on the bell; refreshed every minute from /notifications/badge. -->
+<span th:fragment="bellCount" id="bell-count" hx-get="/notifications/badge" hx-trigger="every 60s" hx-swap="outerHTML">
+    <span th:if="${unreadCount != null and unreadCount > 0}" class="count" th:text="${unreadCount > 99 ? '99+' : unreadCount}" aria-hidden="true">3</span>
+</span>
 
 <!-- Navigation links, shared by the sidebar (with icons) and the phone tabs (icons hidden by CSS). -->
 <th:block th:fragment="navItems(active)">
@@ -66,7 +80,7 @@
             <span class="web-only" style="flex:1"></span>
             <a th:href="@{/notifications}" class="topbar-bell" th:attr="aria-label=${unreadCount != null and unreadCount > 0} ? ${unreadCount} + ' unread notifications' : 'Notifications'">
                 <i class="icon-bell" aria-hidden="true"></i>
-                <span th:if="${unreadCount != null and unreadCount > 0}" class="count" th:text="${unreadCount > 99 ? '99+' : unreadCount}" aria-hidden="true">3</span>
+                <span th:replace="~{fragments/shell :: bellCount}"></span>
             </a>
             <details class="user-menu">
                 <summary class="avatar avatar-light" th:text="${@fmt.initials(me.name())}" th:attr="aria-label='Account: ' + ${me.name()}">AI</summary>

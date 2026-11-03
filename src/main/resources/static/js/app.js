@@ -39,3 +39,17 @@ document.addEventListener('click', function (e) {
     btn.querySelector('.pw-eye-off').classList.toggle('hidden', !show);
     input.focus();
 });
+// Set-password form: tick "At least 10 characters" and "Passwords match" as the person types.
+document.addEventListener('input', function (e) {
+    var form = e.target.closest('[data-password-rules]');
+    if (!form) {
+        return;
+    }
+    var pw = form.querySelector('#password').value;
+    var confirm = form.querySelector('#confirm').value;
+    [['length', pw.length >= 10], ['match', pw.length > 0 && pw === confirm]].forEach(function (rule) {
+        var el = form.querySelector('[data-rule="' + rule[0] + '"]');
+        el.style.color = rule[1] ? 'var(--color-accent-700)' : 'var(--color-neutral-700)';
+        el.querySelector('i').className = rule[1] ? 'icon-circle-check' : 'icon-circle';
+    });
+});

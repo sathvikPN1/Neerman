@@ -1,32 +1,51 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head('Set your password')}"></head>
+<!-- Screen 02 of the design handoff: set a password from an invite link (valid and invalid link). -->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Set your password · Nirmaan Reimbursements</title>
+    <link rel="icon" type="image/png" th:href="@{/img/favicon.png}">
+    <link rel="stylesheet" th:href="@{/design/design-system.css}">
+    <link rel="stylesheet" th:href="@{/design/app.css}">
+    <script th:src="@{/js/app.js}" defer></script>
+</head>
 <body>
-<main id="main" class="min-h-screen flex items-center justify-center px-4">
-    <div class="w-full max-w-sm card p-6">
-        <h1 class="text-lg font-semibold mb-4">Set your password</h1>
-        <div th:unless="${valid}" role="alert" class="rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-sm text-rose-900">
-            This invitation link is invalid, already used or expired. Ask Nirmaan to send a new one.
-        </div>
-        <form th:if="${valid}" th:action="@{/invite/{t}(t=${token})}" method="post" class="space-y-4">
-            <div th:if="${error}" role="alert" class="rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-sm text-rose-900" th:text="${error}"></div>
-            <div>
-                <label class="label" for="password">New password</label>
-                <div class="relative">
-                    <input class="input pr-11" id="password" name="password" type="password" minlength="10" autocomplete="new-password" required>
-                    <button th:replace="~{fragments/layout :: passwordToggle('password')}"></button>
-                </div>
-                <p class="hint">At least 10 characters.</p>
+<main id="main" style="background:var(--color-bg);min-height:100vh;padding:40px 20px;display:flex;flex-wrap:wrap;gap:32px;justify-content:center;align-items:flex-start;border-top:3px solid var(--color-accent-500)">
+
+    <div th:if="${valid}" class="blueprint" style="flex:1 1 320px;max-width:400px;padding:28px;display:flex;flex-direction:column;gap:16px;background:#fff">
+        <th:block th:replace="~{fragments/shell :: corners}"></th:block>
+        <img th:src="@{/design/assets/180fa63b.png}" alt="Nirmaan" style="width:48px;height:48px">
+        <div><h3 style="margin:0" th:text="${inviteeName != null} ? 'Welcome, ' + ${#strings.arraySplit(inviteeName, ' ')[0]} : 'Welcome'">Welcome, Ananya</h3>
+            <span class="text-muted" style="font-size:14px" th:if="${inviteeEmail != null}"
+                  th:text="'Set a password for ' + ${inviteeEmail} + (${inviteeTeam != null} ? ' · Team ' + ${inviteeTeam} : '')">Set a password for ananya@medtrack.in · Team MedTrack</span></div>
+        <div th:if="${error}" role="alert" class="notice notice-warn"><i class="icon-circle-alert" aria-hidden="true"></i><span th:text="${error}">Error</span></div>
+        <form th:action="@{/invite/{t}(t=${token})}" method="post" style="display:flex;flex-direction:column;gap:16px" data-password-rules>
+            <div class="field"><label for="password">New password</label>
+                <div class="pw-wrap">
+                    <input class="input" id="password" name="password" type="password" minlength="10" autocomplete="new-password" required>
+                    <button type="button" class="pw-toggle" data-toggle-password="password" aria-label="Show password" aria-pressed="false"><i class="icon-eye pw-eye" aria-hidden="true"></i><i class="icon-eye-off pw-eye-off hidden" aria-hidden="true"></i></button>
+                </div></div>
+            <div class="field"><label for="confirm">Confirm password</label>
+                <div class="pw-wrap">
+                    <input class="input" id="confirm" name="confirm" type="password" minlength="10" autocomplete="new-password" required>
+                    <button type="button" class="pw-toggle" data-toggle-password="confirm" aria-label="Show password" aria-pressed="false"><i class="icon-eye pw-eye" aria-hidden="true"></i><i class="icon-eye-off pw-eye-off hidden" aria-hidden="true"></i></button>
+                </div></div>
+            <!-- Ticked live by app.js as the person types. -->
+            <div style="display:flex;flex-direction:column;gap:6px;font-size:13px" aria-live="polite">
+                <span data-rule="length" style="display:flex;gap:8px;align-items:center;color:var(--color-neutral-700)"><i class="icon-circle" style="font-size:16px" aria-hidden="true"></i>At least 10 characters</span>
+                <span data-rule="match" style="display:flex;gap:8px;align-items:center;color:var(--color-neutral-700)"><i class="icon-circle" style="font-size:16px" aria-hidden="true"></i>Passwords match</span>
             </div>
-            <div>
-                <label class="label" for="confirm">Confirm password</label>
-                <div class="relative">
-                    <input class="input pr-11" id="confirm" name="confirm" type="password" minlength="10" autocomplete="new-password" required>
-                    <button th:replace="~{fragments/layout :: passwordToggle('confirm')}"></button>
-                </div>
-            </div>
-            <button class="btn btn-primary w-full">Activate account</button>
+            <button class="btn btn-primary btn-lg" type="submit">Set password and sign in</button>
         </form>
+    </div>
+
+    <div th:unless="${valid}" class="blueprint" style="flex:1 1 320px;max-width:400px;padding:28px;display:flex;flex-direction:column;gap:14px;background:#fff">
+        <th:block th:replace="~{fragments/shell :: corners}"></th:block>
+        <i class="icon-link-2-off" style="font-size:36px;color:var(--color-neutral-700)" aria-hidden="true"></i>
+        <h3 style="margin:0">This invite link no longer works</h3>
+        <p style="margin:0;font-size:14px;color:var(--color-neutral-800)">Invite links expire after 7 days or once used. Ask Nirmaan staff to send a new one.</p>
+        <a class="btn btn-secondary" th:href="@{/login}" style="min-height:44px">Go to sign in</a>
     </div>
 </main>
 </body>

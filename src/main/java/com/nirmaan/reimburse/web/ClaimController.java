@@ -90,12 +90,18 @@ public class ClaimController {
 
     @PostMapping("/claims/{id}")
     public String update(@PathVariable Long id, @Valid @ModelAttribute("form") ClaimForm form, BindingResult errors,
-                         Model model, RedirectAttributes redirect) {
+                         @RequestParam(required = false) String submit, Model model, RedirectAttributes redirect) {
         if (errors.hasErrors()) {
             model.addAttribute("errors", FormErrors.of(errors));
             return form(model, form, id);
         }
         claims.updateDraft(id, form);
+        if (submit != null) {
+            // "Submit claim" on the form: save what was typed, then submit, so no edit is lost.
+            decisions.act(id, ClaimAction.SUBMIT, new TransitionRequest(null, null, null, Map.of()));
+            redirect.addFlashAttribute("success", "Claim submitted. You'll be notified at every step.");
+            return "redirect:/team";
+        }
         redirect.addFlashAttribute("success", "Changes saved.");
         return "redirect:/claims/" + id + "/edit";
     }
@@ -120,6 +126,7 @@ public class ClaimController {
         if (claimId != null) {
             model.addAttribute("claim", claims.detail(claimId));
         }
+        model.addAttribute("impactAmount", form.claimedAmount());
         return "claims/form";
     }
 
@@ -136,7 +143,13 @@ public class ClaimController {
             // invalid numbers are reported by form validation on save
         }
         model.addAttribute("warnings", claims.warningsFor(categoryId, amount));
-        return "claims/fragments :: warnings";
+        Long teamId = CurrentUser.require().teamId();
+        if (teamId != null) {
+            // The budget-impact panel is swapped in alongside the warnings (hx-swap-oob).
+            model.addAttribute("budget", budgets.snapshotForCurrentUser(teamId));
+            model.addAttribute("impactAmount", amount);
+        }
+        return "claims/fragments :: liveChecks";
     }
 
     @PostMapping("/claims/{id}/documents")
