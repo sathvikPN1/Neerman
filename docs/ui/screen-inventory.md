@@ -542,3 +542,43 @@ For each screen in section 5 (and section 6 where possible):
 2. Its **states**: normal, empty, error/validation, and role variants (e.g. claim detail as team vs staff vs COO vs Finance).
 3. A small **component sheet**: header and navigation, buttons, form fields, status chips, priority badge, budget meter, cards, tables and mobile lists, timeline, chat bubbles, flash and inline messages, empty states.
 4. Output as **HTML with Tailwind CSS classes** (or a precise spec), using the brand tokens in section 3, so the designs can be dropped into the Thymeleaf templates.
+
+---
+
+## 9. Screenshots of the current UI
+
+Every screen as it looks today, in `docs/ui/screens/`. Each has a **desktop** (1280 px) and a **mobile** (500 px) version: `<name>-desktop.png` and `<name>-mobile.png`. They were captured from the app with demo data and the current Nirmaan green theme. Use them to see the current layout and content, **not** as the target look; the goal of the redesign is to improve on them.
+
+| Screen (section 5) | File prefix | Signed in as | State shown |
+|---|---|---|---|
+| 1 Sign in | `01-login` | (public) | Empty form |
+| 2 Set password | `02-invite-set-password` | (public) | Valid invite link |
+| 2 Set password | `02b-invite-invalid` | (public) | Invalid or expired link |
+| 3 Error page | `03-error-403` | Team member | 403: team member opening the staff queue |
+| 4 Team dashboard | `04-team-dashboard` | Priya (AgriSense) | Budget meter and claims in several statuses |
+| 5 Claim form | `05a-claim-form-new` | Priya | New claim, empty |
+| 5 Claim form | `05b-claim-form-draft-with-documents` | Priya | Saved draft with the documents section |
+| 5 Claim form | `05c-claim-form-returned` | Arjun (AgriSense) | **Returned** claim with staff's reason, ready to resubmit |
+| 6 Claim detail | `06a-claim-detail-staff-verifying` | Sneha (staff) | Submitted claim with a **priority request**: verify / return / reject and priority actions (panels expanded) |
+| 6 Claim detail | `06b-claim-detail-coo-approving` | COO | **Verified priority** claim: approve / partial / return / reject |
+| 6 Claim detail | `06c-claim-detail-team-view` | Meera (MedTrack) | Team's view of the same claim: message thread and history |
+| 6 Claim detail | `06d-claim-detail-finance-paying` | Finance | **Approved** claim with the mark-as-paid form |
+| 7 Verification queue | `07-staff-verification-queue` | Sneha (staff) | Submitted claims, filter bar |
+| 8 Approvals | `08a-coo-approvals` | COO | Priority section, collapsed row, bulk bar |
+| 8 Approvals | `08b-coo-approvals-row-expanded` | COO | **Row expanded**: justification, invoice tile, budget impact, all actions |
+| 9 Payment queue | `09-finance-payment-queue` | Finance | One approved claim with the payment form |
+| 10 Teams list | `10-teams-list` | COO | 3 teams with budgets |
+| 11 Team detail | `11-team-detail` | COO | AgriSense: members, team priority, claims |
+| 12 Team form | `12-team-form` | COO | New team |
+| 13 Cohorts | `13-cohorts` | COO | Create form and list |
+| 14 Categories | `14a-categories-manager` | COO | With edit and add controls |
+| 14 Categories | `14b-categories-team-view` | Priya | Read-only rules, as teams see them |
+| 15 Staff & permissions | `15-staff-and-permissions` | COO | People, default bundles, COO transfer, history |
+| 16 Edit permissions | `16-edit-staff-permissions` | COO | Sneha's permissions with expiry dates |
+| 17 Audit log | `17-audit-log` | COO | Recent entries |
+| 18 Notifications | `18-notifications` | Priya | Read and unread items |
+
+Notes:
+- **Dark boxes in the document previews** (claim detail) are a screenshot limitation; in a real browser they show the PDF.
+- **Mobile captures are 500 px wide**, the narrowest the capture tool allows. Design for **390 px**.
+- **Red notification counts** reflect the demo activity.
