@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('AI assistant')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: nav}"></div>
+<main id="main" class="max-w-3xl mx-auto px-4 py-6 space-y-6">
+    <div th:replace="~{fragments/flash :: flash}"></div>
+    <div>
+        <h1 class="text-2xl font-semibold">Use ChatGPT or Claude for your claims</h1>
+        <p class="text-sm text-slate-600 mt-1">Connect your AI assistant once. Then share a photo of a receipt or invoice and ask it to prepare the claim.
+            It fills in the details, attaches the documents and gives you a link. <strong>You always review and press Submit yourself.</strong></p>
+    </div>
+
+    <section class="card p-4 space-y-2" aria-labelledby="url-title">
+        <h2 id="url-title" class="font-semibold">Connector URL</h2>
+        <div class="flex gap-2">
+            <input class="input font-mono text-sm" id="mcp-url" th:value="${mcpUrl}" readonly aria-label="Connector URL">
+            <button type="button" class="btn btn-ghost" onclick="navigator.clipboard.writeText(document.getElementById('mcp-url').value); this.textContent='Copied'">Copy</button>
+        </div>
+        <p th:unless="${publicUrl}" class="text-sm rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-amber-900">
+            This app is running on a local address. ChatGPT and claude.ai need a public <strong>https</strong> address. Ask Nirmaan staff for the public link.
+            Claude Code and Claude Desktop on this computer can use it as is.</p>
+    </section>
+
+    <section class="card p-4 space-y-3" aria-labelledby="how-title">
+        <h2 id="how-title" class="font-semibold">How to connect</h2>
+        <details class="rounded-lg border p-3" open>
+            <summary class="font-medium">ChatGPT</summary>
+            <ol class="mt-2 list-decimal pl-5 text-sm space-y-1">
+                <li>Open <strong>Settings → Apps &amp; Connectors → Advanced settings</strong> and turn on <strong>Developer mode</strong>.</li>
+                <li>Click <strong>Create</strong> (custom connector), name it <em>Nirmaan</em>, paste the connector URL, choose <strong>OAuth</strong>.</li>
+                <li>Sign in with your Nirmaan account when asked, and click <strong>Allow</strong>.</li>
+                <li>In a chat, enable the Nirmaan connector and say: <em>"Here's my invoice, prepare a Nirmaan claim."</em></li>
+            </ol>
+        </details>
+        <details class="rounded-lg border p-3">
+            <summary class="font-medium">Claude (claude.ai or the Claude app)</summary>
+            <ol class="mt-2 list-decimal pl-5 text-sm space-y-1">
+                <li>Open <strong>Settings → Connectors → Add custom connector</strong>.</li>
+                <li>Name it <em>Nirmaan</em> and paste the connector URL. Click <strong>Add</strong>, then <strong>Connect</strong>.</li>
+                <li>Sign in with your Nirmaan account and click <strong>Allow</strong>.</li>
+            </ol>
+        </details>
+        <details class="rounded-lg border p-3">
+            <summary class="font-medium">Claude Code</summary>
+            <p class="mt-2 text-sm">Run this in a terminal, then type <code>/mcp</code> in Claude Code and choose <em>Authenticate</em>:</p>
+            <pre class="mt-1 rounded bg-slate-900 text-slate-100 text-xs p-3 overflow-x-auto"><code th:text="'claude mcp add --transport http nirmaan ' + ${mcpUrl}">claude mcp add …</code></pre>
+        </details>
+    </section>
+
+    <section class="card p-4" aria-labelledby="conn-title">
+        <h2 id="conn-title" class="font-semibold mb-2">Connected assistants</h2>
+        <p th:if="${connections.isEmpty()}" class="text-sm text-slate-500">None yet.</p>
+        <ul class="divide-y">
+            <li th:each="c : ${connections}" class="py-2 flex items-center justify-between gap-3">
+                <div>
+                    <p class="font-medium" th:text="${c.clientName()}">ChatGPT</p>
+                    <p class="text-xs text-slate-500">Connected <span th:text="${@fmt.dateTime(c.createdAt())}"></span>
+                        · last used <span th:text="${c.lastUsedAt() == null ? 'never' : @fmt.dateTime(c.lastUsedAt())}"></span></p>
+                </div>
+                <form th:action="@{/team/ai/{id}/revoke(id=${c.id()})}" method="post" onsubmit="return confirm('Revoke access for this assistant?')">
+                    <button class="btn btn-ghost text-rose-700">Revoke</button>
+                </form>
+            </li>
+        </ul>
+    </section>
+</main>
+</body>
+</html>

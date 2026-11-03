@@ -172,6 +172,10 @@ com.nirmaan.reimburse
 
 **Timezones.** Timestamps are stored as `TIMESTAMPTZ` in UTC and displayed in Asia/Kolkata as `dd MMM yyyy`. Money is `NUMERIC(12,2)` and displayed as `₹1,25,000.00`.
 
+## AI connector for startup teams (ChatGPT / Claude)
+
+Team members can connect ChatGPT or Claude through MCP (`/mcp`, OAuth 2.1 with PKCE). The assistant reads a receipt, creates the **draft** claim and attaches documents; the student always presses **Submit** themselves. Students find setup instructions and can revoke access under **AI assistant** in the menu. ChatGPT and claude.ai need a public HTTPS address; Claude Code works on localhost. Full guide: [docs/mcp-connector.md](docs/mcp-connector.md).
+
 ## Common admin tasks
 
 **Add or change an expense category.**

@@ -55,6 +55,7 @@
         <ul class="flex gap-1 text-sm whitespace-nowrap pb-2">
             <li sec:authorize="hasRole('TEAM_MEMBER')"><a class="nav-link" th:href="@{/team}">My team</a></li>
             <li sec:authorize="hasRole('TEAM_MEMBER')"><a class="nav-link" th:href="@{/claims/new}">New claim</a></li>
+            <li sec:authorize="hasRole('TEAM_MEMBER')"><a class="nav-link" th:href="@{/team/ai}">AI assistant</a></li>
             <li sec:authorize="hasAuthority('CLAIM_APPROVE')"><a class="nav-link" th:href="@{/coo/approvals}">Approvals</a></li>
             <li sec:authorize="hasAnyAuthority('CLAIM_VERIFY','CLAIM_RETURN_REJECT','CLAIM_APPROVE','CLAIM_FLAG_PRIORITY')"><a class="nav-link" th:href="@{/staff/queue}">Verification queue</a></li>
             <li sec:authorize="hasAuthority('PAYMENT_RECORD')"><a class="nav-link" th:href="@{/finance/payments}">Payments</a></li>

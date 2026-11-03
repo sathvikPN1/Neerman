@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Upload documents')}"></head>
+<body>
+<main id="main" class="min-h-screen flex items-start justify-center px-4 py-10">
+    <div class="w-full max-w-lg space-y-4">
+        <div class="flex items-center gap-3">
+            <img th:src="@{/img/nirmaan-logo.png}" alt="" class="h-10 w-10" width="40" height="40">
+            <h1 class="text-lg font-semibold">Upload documents for your claim</h1>
+        </div>
+        <div th:replace="~{fragments/flash :: flash}"></div>
+
+        <div th:if="${expired}" role="alert" class="card p-5 text-slate-700">
+            <p class="font-medium">This upload link has expired or is invalid.</p>
+            <p class="text-sm mt-1">Upload links work for 30 minutes. Ask your AI assistant for a new one, or upload from the claim page in the Nirmaan app.</p>
+        </div>
+
+        <th:block th:unless="${expired}">
+            <section class="card p-5">
+                <p class="text-sm text-slate-500" th:text="${claim.publicCode()}">NRM-2026-00001</p>
+                <p class="text-lg font-semibold"><span th:text="${claim.vendorName()}">Vendor</span> · <span th:text="${@fmt.inr(claim.claimedAmount())}"></span></p>
+                <p class="text-sm text-slate-600"><span th:text="${claim.teamName()}"></span> · <span th:text="${claim.categoryName()}"></span>
+                    · <span th:replace="~{fragments/layout :: status(${claim.status()})}"></span></p>
+            </section>
+
+            <section class="card p-5 space-y-3" th:if="${claim.editable()}">
+                <h2 class="font-semibold">Attached</h2>
+                <p th:if="${claim.documents().isEmpty()}" class="text-sm text-slate-500">Nothing attached yet.</p>
+                <ul class="text-sm space-y-1">
+                    <li th:each="d : ${claim.documents()}">✓ <strong th:text="${d.type().label()}"></strong> · <span th:text="${d.originalFilename()}"></span></li>
+                </ul>
+                <form th:action="@{/upload/{t}(t=${token})}" method="post" enctype="multipart/form-data" class="space-y-3 border-t pt-3">
+                    <div>
+                        <label class="label" for="type">What is this file?</label>
+                        <select class="input" id="type" name="type">
+                            <option value="INVOICE">Invoice (real tax invoice, not pro-forma)</option>
+                            <option value="PAYMENT_PROOF">Payment proof (UPI screenshot, bank statement, card slip)</option>
+                            <option value="OTHER">Other attachment</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label" for="file">File</label>
+                        <input class="input" id="file" name="file" type="file" accept=".pdf,.jpg,.jpeg,.png,.heic,application/pdf,image/*" required>
+                        <p class="hint">PDF, JPG, PNG or HEIC, up to 10 MB.</p>
+                    </div>
+                    <button class="btn btn-primary w-full">Upload</button>
+                </form>
+            </section>
+            <p th:unless="${claim.editable()}" class="card p-5 text-sm">This claim is no longer a draft, so documents can't be added here.</p>
+            <p class="text-sm text-slate-600">When both documents are attached, review the claim and press <strong>Submit</strong> in the Nirmaan app.
+                <a class="text-brand-700 underline" th:href="@{/claims/{id}/edit(id=${claim.id()})}">Open the claim</a> (sign-in required).</p>
+        </th:block>
+    </div>
+</main>
+</body>
+</html>

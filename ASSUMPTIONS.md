@@ -46,3 +46,13 @@ Where the brief was ambiguous, we chose the simplest option that fits the busine
 28. **Pratham → Akshar.** In Phase 1, staff can change a team's program and budget from the team edit page (audit-logged). The dedicated promotion flow with budget history comes in Phase 3.
 29. **SLA targets** are stored in `settings` (2 working days for priority, 5 for normal). The reminders that use them come in Phase 3.
 30. **Bank details and batch payouts** come in Phase 2. The finance queue currently shows claims and approved amounts without bank details.
+
+## AI connector (MCP), added after Phase 1
+
+31. **Drafts only.** The assistant can read team data, and create or edit drafts and attach documents. It cannot submit, because submitting a money claim is the student's own declaration. Staff and the COO cannot connect.
+32. **Built-in OAuth server.** A minimal OAuth 2.1 authorization server is built into the app rather than added as an external identity provider. It supports authorization code with mandatory PKCE S256, dynamic client registration for public clients, and rotating refresh tokens. Students log in with their existing Nirmaan account. This keeps one user database, and IITM SSO can later sit behind the same login page.
+33. **Stateless MCP endpoint.** The MCP endpoint uses Streamable HTTP with no server-sent event stream or session ids; each POST gets a JSON reply. None of the tools needs streaming.
+34. **Upload links.** One-time upload links last 30 minutes and allow several files until they expire. The link itself is the credential, so it is long, random and stored hashed. Uploads still pass all the normal document checks.
+35. **Token lifetimes:** access tokens 1 hour, refresh tokens 30 days, authorization codes 5 minutes. A reused code or refresh token revokes the whole grant.
+36. **Public address.** ChatGPT and claude.ai need a public HTTPS URL. For the demo this is a Cloudflare quick tunnel (`docs/mcp-connector.md`); production would deploy the app behind HTTPS. `server.forward-headers-strategy=framework` makes redirects use the tunnel's address.
+

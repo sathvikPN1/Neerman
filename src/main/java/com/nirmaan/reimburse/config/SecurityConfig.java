@@ -4,6 +4,7 @@ import com.nirmaan.reimburse.user.PrincipalLoader;
 import com.nirmaan.reimburse.user.UserRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -12,7 +13,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
-import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
@@ -30,12 +31,13 @@ import java.time.Clock;
 public class SecurityConfig {
 
     @Bean
+    @Order(2)
     SecurityFilterChain securityFilterChain(HttpSecurity http, LoginAttemptService loginAttempts,
                                             PrincipalLoader loader, UserRepository users,
                                             TransactionTemplate tx, Clock clock) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/login", "/invite/**", "/css/**", "/js/**", "/img/**", "/favicon.ico",
+                        .requestMatchers("/login", "/invite/**", "/upload/**", "/css/**", "/js/**", "/img/**", "/favicon.ico",
                                 "/actuator/health", "/actuator/health/**", "/error").permitAll()
                         .anyRequest().authenticated())
                 .formLogin(form -> form
@@ -55,8 +57,9 @@ public class SecurityConfig {
     }
 
     private static AuthenticationSuccessHandler loginSuccess(LoginAttemptService attempts) {
-        SimpleUrlAuthenticationSuccessHandler delegate = new SimpleUrlAuthenticationSuccessHandler("/");
-        delegate.setAlwaysUseDefaultTargetUrl(true);
+        // Return to the page that required login (e.g. an AI connector consent screen), otherwise home.
+        SavedRequestAwareAuthenticationSuccessHandler delegate = new SavedRequestAwareAuthenticationSuccessHandler();
+        delegate.setDefaultTargetUrl("/");
         return (request, response, authentication) -> {
             attempts.recordSuccess(authentication.getName());
             delegate.onAuthenticationSuccess(request, response, authentication);

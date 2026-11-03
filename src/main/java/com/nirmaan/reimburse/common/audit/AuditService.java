@@ -35,8 +35,12 @@ public class AuditService {
     @Transactional
     public void record(AuditEntity entity, Long entityId, String action, Long actorId, Long onBehalfOfId,
                        String permissionUsed, String fromState, String toState, Map<String, Object> detail) {
+        Map<String, Object> d = detail == null ? new HashMap<>() : new HashMap<>(detail);
+        if (AuditContext.via() != null) {
+            d.put("via", AuditContext.via());
+        }
         repository.save(new AuditLog(entity, entityId, action, actorId, onBehalfOfId, permissionUsed,
-                fromState, toState, detail, Instant.now(clock)));
+                fromState, toState, d, Instant.now(clock)));
     }
 
     /** Audit entry attributed to the signed-in user (or the system when nobody is signed in). */

@@ -30,6 +30,8 @@ spring:
     time-zone: UTC
 
 server:
+  # Honour X-Forwarded-* from a reverse proxy or tunnel (e.g. Cloudflare) so redirects use the public https URL.
+  forward-headers-strategy: framework
   servlet:
     session:
       timeout: 8h
