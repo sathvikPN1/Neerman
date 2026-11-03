@@ -109,7 +109,7 @@ class McpConnectorIT extends IntegrationTest {
 
         // upload the invoice through the tool (base64)
         JsonNode up = call(t.access(), "upload_document", Map.of("claim_code", code, "document_type", "INVOICE",
-                "filename", "invoice.pdf", "content_base64", Base64.getEncoder().encodeToString(Fixtures.PDF)));
+                "filename", "invoice.pdf", "content_base64", Base64.getEncoder().encodeToString(Fixtures.uniquePdf())));
         assertThat(up.at("/structuredContent/claim/missing_documents").toString()).isEqualTo("[\"Payment proof\"]");
 
         // a disguised executable is still rejected by content

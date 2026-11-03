@@ -1,11 +1,13 @@
 package com.nirmaan.reimburse.common.web;
 
+import com.nirmaan.reimburse.claim.DuplicateClaimGuard;
 import com.nirmaan.reimburse.common.exception.BusinessRuleException;
 import com.nirmaan.reimburse.common.exception.NotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.ui.Model;
@@ -35,6 +37,17 @@ public class GlobalExceptionHandler {
     public String tooLarge(HttpServletRequest request, HttpServletResponse response, RedirectAttributes redirect,
                            Model model) {
         return back("Files must be 10 MB or smaller.", request, response, redirect, model, HttpStatus.PAYLOAD_TOO_LARGE);
+    }
+
+    /** Two requests raced past the duplicate check and the database index stopped the second. */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public String integrity(DataIntegrityViolationException e, HttpServletRequest request, HttpServletResponse response,
+                            RedirectAttributes redirect, Model model) {
+        if (String.valueOf(e.getMostSpecificCause().getMessage()).contains(DuplicateClaimGuard.INVOICE_INDEX)) {
+            return back("This invoice has already been claimed. Each invoice can be reimbursed only once.",
+                    request, response, redirect, model, HttpStatus.CONFLICT);
+        }
+        throw e;
     }
 
     @ExceptionHandler(AccessDeniedException.class)

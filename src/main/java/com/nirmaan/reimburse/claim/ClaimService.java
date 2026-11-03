@@ -28,6 +28,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.Year;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -50,13 +51,14 @@ public class ClaimService {
     private final DocumentService documents;
     private final CommentService comments;
     private final PaymentService payments;
+    private final DuplicateClaimGuard duplicates;
     private final AuditService audit;
     private final Clock clock;
 
     public ClaimService(ClaimRepository claims, ClaimStateMachine stateMachine, ClaimRowMapper rowMapper,
                         CategoryRepository categories, TeamRepository teams, UserRepository users,
                         BudgetService budgets, DocumentService documents, CommentService comments,
-                        PaymentService payments, AuditService audit, Clock clock) {
+                        PaymentService payments, DuplicateClaimGuard duplicates, AuditService audit, Clock clock) {
         this.claims = claims;
         this.stateMachine = stateMachine;
         this.rowMapper = rowMapper;
@@ -67,6 +69,7 @@ public class ClaimService {
         this.documents = documents;
         this.comments = comments;
         this.payments = payments;
+        this.duplicates = duplicates;
         this.audit = audit;
         this.clock = clock;
     }
@@ -128,6 +131,8 @@ public class ClaimService {
         if (!category.isActive()) {
             throw new BusinessRuleException("That category is no longer available.");
         }
+        // Checked before the claim changes, so the lookup never sees (or flushes) half-applied edits.
+        duplicates.requireUniqueInvoice(claim.getId(), claim.getTeamId(), form);
         claim.updateDetails(category.getId(), Money.normalise(form.claimedAmount()), form.expenseDate(),
                 form.vendorName().trim(), blankToNull(form.vendorGstin()), blankToNull(form.invoiceNumber()),
                 form.invoiceDate(), form.justification().trim(), now);
@@ -157,9 +162,10 @@ public class ClaimService {
                 actions.add(a);
             }
         }
-        List<ClaimWarning> warnings = ClaimWarnings.evaluate(category,
+        List<ClaimWarning> warnings = new ArrayList<>(ClaimWarnings.evaluate(category,
                 c.getStatus() == ClaimStatus.APPROVED || c.getStatus() == ClaimStatus.PAID ? null : c.getClaimedAmount(),
-                budget, c.getPreApprovalId() != null);
+                budget, c.getPreApprovalId() != null));
+        warnings.addAll(duplicates.possibleDuplicates(c));
 
         return new ClaimDetailView(c.getId(), c.getPublicCode(), team.getId(), team.getName(), c.getCategoryId(),
                 category == null ? "—" : category.getName(), c.getClaimedAmount(), c.getApprovedAmount(),

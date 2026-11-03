@@ -80,6 +80,11 @@ public class Fixtures {
         return prefix + "-" + SEQ.incrementAndGet() + "-" + System.nanoTime() % 100000;
     }
 
+    /** A valid PDF with different bytes each time, since the same receipt file cannot back two claims. */
+    public static byte[] uniquePdf() {
+        return (new String(PDF, StandardCharsets.US_ASCII) + unique("%")).getBytes(StandardCharsets.US_ASCII);
+    }
+
     public User coo() {
         return users.findActiveByRole(Role.COO).getFirst();
     }
@@ -131,8 +136,8 @@ public class Fixtures {
     public Long draftWithDocuments(User member, String amount) {
         return as(member, () -> {
             Long id = claimService.createDraft(claimForm(amount));
-            documents.upload(id, DocumentType.INVOICE, "invoice.pdf", PDF);
-            documents.upload(id, DocumentType.PAYMENT_PROOF, "proof.pdf", (new String(PDF) + unique("x")).getBytes(StandardCharsets.US_ASCII));
+            documents.upload(id, DocumentType.INVOICE, "invoice.pdf", uniquePdf());
+            documents.upload(id, DocumentType.PAYMENT_PROOF, "proof.pdf", uniquePdf());
             return id;
         });
     }

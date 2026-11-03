@@ -11,5 +11,7 @@ public interface ClaimDocumentRepository extends JpaRepository<ClaimDocument, Lo
 
     List<ClaimDocument> findByClaimIdIn(Collection<Long> claimIds);
 
+    List<ClaimDocument> findBySha256AndTypeNot(String sha256, DocumentType type);
+
     boolean existsByClaimIdAndType(Long claimId, DocumentType type);
 }

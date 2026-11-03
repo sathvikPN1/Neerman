@@ -62,13 +62,15 @@ public class DocumentService {
         }
         String contentType = FileTypeDetector.detect(content).orElseThrow(() ->
                 new BusinessRuleException("Only PDF, JPG, PNG or HEIC files are accepted."));
+        String sha256 = sha256(content);
+        requireNotClaimedElsewhere(claim, type, sha256);
         String key = "claims/" + claim.getId() + "/" + UUID.randomUUID();
         storage.put(key, content, contentType);
         deleteFromStorageOnRollback(key);
 
         String filename = sanitise(originalFilename);
         ClaimDocument doc = documents.save(new ClaimDocument(claim.getId(), type, key, filename, contentType,
-                content.length, sha256(content), actor.id(), Instant.now(clock)));
+                content.length, sha256, actor.id(), Instant.now(clock)));
         audit.record(AuditEntity.CLAIM, claim.getId(), "DOCUMENT_UPLOADED",
                 detail("type", type, "file", filename, "sha256", doc.getSha256()));
         return DocumentView.of(doc);
@@ -110,6 +112,31 @@ public class DocumentService {
         AccessPolicy.requireTeamView(CurrentUser.require(), claim.getTeamId());
         return new DocumentContent(doc.getOriginalFilename(), doc.getContentType(), doc.getSize(),
                 storage.get(doc.getStorageKey()));
+    }
+
+    /**
+     * The same invoice or payment proof file (byte for byte, by SHA-256) cannot back two claims.
+     * Supporting files (OTHER) are exempt, e.g. one quotation can explain several purchases.
+     * On the same claim, one file may serve as both invoice and payment proof, but not twice as the same type.
+     */
+    private void requireNotClaimedElsewhere(Claim claim, DocumentType type, String sha256) {
+        if (type == DocumentType.OTHER) {
+            return;
+        }
+        for (ClaimDocument same : documents.findBySha256AndTypeNot(sha256, DocumentType.OTHER)) {
+            if (same.getClaimId().equals(claim.getId())) {
+                if (same.getType() == type) {
+                    throw new BusinessRuleException("This file is already attached to this claim.");
+                }
+                continue;
+            }
+            Claim other = claims.findById(same.getClaimId()).orElseThrow();
+            throw new BusinessRuleException(other.getTeamId().equals(claim.getTeamId())
+                    ? "This exact file is already attached to claim " + other.getPublicCode()
+                      + ". The same receipt cannot be reimbursed twice."
+                    : "This exact file has already been used in another team's claim. "
+                      + "The same receipt cannot be reimbursed twice.");
+        }
     }
 
     private void deleteFromStorageOnRollback(String key) {
