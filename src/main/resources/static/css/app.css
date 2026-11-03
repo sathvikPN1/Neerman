@@ -26,3 +26,6 @@ body { background: var(--page); color: var(--ink); font-family: ui-sans-serif, s
 .htmx-request .htmx-indicator { display: inline; } .htmx-indicator { display: none; }
 details > summary { list-style: none; cursor: pointer; } details > summary::-webkit-details-marker { display: none; }
 input[type="checkbox"] { accent-color: var(--brand-700); }
+.pw-toggle { position: absolute; top: 0; right: 0; height: 100%; width: 2.75rem; display: flex; align-items: center; justify-content: center; color: #475569; border-radius: 0 .5rem .5rem 0; }
+.pw-toggle:hover { color: var(--brand-800); }
+.pw-toggle:focus-visible { outline: 3px solid var(--brand-500); outline-offset: -3px; }

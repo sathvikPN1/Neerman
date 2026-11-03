@@ -21,3 +21,21 @@ document.addEventListener('change', function (e) {
         });
     }
 });
+// Show/hide password: buttons with data-toggle-password="<input id>".
+document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-toggle-password]');
+    if (!btn) {
+        return;
+    }
+    var input = document.getElementById(btn.dataset.togglePassword);
+    if (!input) {
+        return;
+    }
+    var show = input.type === 'password';
+    input.type = show ? 'text' : 'password';
+    btn.setAttribute('aria-pressed', String(show));
+    btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+    btn.querySelector('.pw-eye').classList.toggle('hidden', show);
+    btn.querySelector('.pw-eye-off').classList.toggle('hidden', !show);
+    input.focus();
+});
