@@ -57,7 +57,8 @@ public class ClaimRowMapper {
                     t == null ? "—" : cohortNames.getOrDefault(t.getCohortId(), "—"),
                     categoryNames.getOrDefault(c.getCategoryId(), "—"), c.getVendorName(), c.getClaimedAmount(),
                     c.getApprovedAmount(), c.getStatus(), priority, reason, c.isPriorityRequested(), c.getExpenseDate(),
-                    c.getSubmittedAt(), c.getStageEnteredAt(), userNames.get(c.getVerifiedBy()), c.getVersion());
+                    c.getSubmittedAt(), c.getStageEnteredAt(), userNames.get(c.getVerifiedBy()), c.getVersion(),
+                    c.getJustification(), c.getDecisionReason());
         }).toList();
     }
 }

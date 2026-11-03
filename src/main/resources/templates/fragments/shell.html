@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<!--
+  App shell of the redesign (design handoff, screens 04–18): dark sidebar on web, brand bar + tabs on phone.
+  Pages that have been redesigned use these fragments; the rest still use fragments/layout.
+  Usage:
+    <head th:replace="~{fragments/shell :: head('Our claims')}"></head>
+    <body th:replace="~{fragments/shell :: page('claims', ~{::#content})}"><div id="content">…</div></body>
+-->
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="_csrf" th:if="${_csrf != null}" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:if="${_csrf != null}" th:content="${_csrf.headerName}">
+    <title th:text="${title} + ' · Nirmaan Reimbursements'">Nirmaan Reimbursements</title>
+    <link rel="icon" type="image/png" th:href="@{/img/favicon.png}">
+    <link rel="stylesheet" th:href="@{/design/design-system.css}">
+    <link rel="stylesheet" th:href="@{/design/app.css}">
+    <script th:src="@{/js/app.js}" defer></script>
+</head>
+
+<!-- Navigation links, shared by the sidebar (with icons) and the phone tabs (icons hidden by CSS). -->
+<th:block th:fragment="navItems(active)">
+    <th:block sec:authorize="hasRole('TEAM_MEMBER')">
+        <a class="nav-item" th:href="@{/team}" th:attr="aria-current=${active == 'claims'} ? 'page'"><i class="icon-receipt" aria-hidden="true"></i>Our claims</a>
+        <a class="nav-item" th:href="@{/claims/new}" th:attr="aria-current=${active == 'new-claim'} ? 'page'"><i class="icon-plus" aria-hidden="true"></i>New claim</a>
+        <a class="nav-item" th:href="@{/notifications}" th:attr="aria-current=${active == 'notifications'} ? 'page'"><i class="icon-bell" aria-hidden="true"></i>Notifications</a>
+        <a class="nav-item" th:href="@{/team/ai}" th:attr="aria-current=${active == 'ai'} ? 'page'"><i class="icon-bot" aria-hidden="true"></i>AI assistant</a>
+    </th:block>
+    <a sec:authorize="hasAuthority('CLAIM_APPROVE')" class="nav-item" th:href="@{/coo/approvals}" th:attr="aria-current=${active == 'approvals'} ? 'page'"><i class="icon-circle-check" aria-hidden="true"></i>Approvals</a>
+    <a sec:authorize="hasAnyAuthority('CLAIM_VERIFY','CLAIM_RETURN_REJECT','CLAIM_APPROVE','CLAIM_FLAG_PRIORITY')" class="nav-item" th:href="@{/staff/queue}" th:attr="aria-current=${active == 'verify'} ? 'page'"><i class="icon-clipboard-check" aria-hidden="true"></i>Verification queue</a>
+    <a sec:authorize="hasAuthority('PAYMENT_RECORD')" class="nav-item" th:href="@{/finance/payments}" th:attr="aria-current=${active == 'payments'} ? 'page'"><i class="icon-banknote" aria-hidden="true"></i>Payments</a>
+    <th:block th:if="${staffSide}">
+        <a class="nav-item" th:href="@{/teams}" th:attr="aria-current=${active == 'teams'} ? 'page'"><i class="icon-users" aria-hidden="true"></i>Teams</a>
+        <a class="nav-item" th:href="@{/cohorts}" th:attr="aria-current=${active == 'cohorts'} ? 'page'"><i class="icon-layers" aria-hidden="true"></i>Cohorts</a>
+        <a class="nav-item" th:href="@{/categories}" th:attr="aria-current=${active == 'categories'} ? 'page'"><i class="icon-tags" aria-hidden="true"></i>Categories</a>
+    </th:block>
+    <a sec:authorize="hasAuthority('AUDIT_LOG_VIEW')" class="nav-item" th:href="@{/audit}" th:attr="aria-current=${active == 'audit'} ? 'page'"><i class="icon-history" aria-hidden="true"></i>Audit log</a>
+    <a sec:authorize="hasAuthority('STAFF_MANAGE')" class="nav-item" th:href="@{/admin/staff}" th:attr="aria-current=${active == 'staff'} ? 'page'"><i class="icon-shield" aria-hidden="true"></i>Staff &amp; permissions</a>
+</th:block>
+
+<body th:fragment="page(active, content)">
+<div class="shell">
+    <aside class="shell-aside" aria-label="Main">
+        <div style="display:flex;align-items:center;gap:10px;padding:0 6px 18px"><img th:src="@{/design/assets/180fa63b.png}" alt="Nirmaan" style="width:36px;height:36px"><div style="display:flex;flex-direction:column;line-height:1.1"><span style="font-family:var(--font-heading);font-weight:600;font-size:18px">Nirmaan</span><span style="font-size:12px;color:var(--color-accent-300)">Reimbursements</span></div></div>
+        <nav aria-label="Main" style="display:flex;flex-direction:column;gap:2px">
+            <th:block th:replace="~{fragments/shell :: navItems(${active})}"></th:block>
+        </nav>
+        <div style="flex:1"></div>
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 6px 0;border-top:1px solid rgba(255,255,255,.15)">
+            <span class="avatar avatar-dark" th:text="${@fmt.initials(me.name())}" aria-hidden="true">AS</span>
+            <div style="display:flex;flex-direction:column;font-size:13px;line-height:1.2"><b th:text="${me.name()}">Name</b>
+                <form th:action="@{/logout}" method="post" style="margin:0"><button type="submit" class="side-signout">Sign out</button></form>
+            </div>
+        </div>
+    </aside>
+
+    <div class="shell-main">
+        <header class="topbar">
+            <span class="phone-brand"><img th:src="@{/design/assets/180fa63b.png}" alt="Nirmaan" style="width:32px;height:32px"><span style="font-family:var(--font-heading);font-weight:600;font-size:18px;flex:1;white-space:nowrap">Nirmaan <span style="color:var(--color-accent)">Reimbursements</span></span></span>
+            <form th:if="${me.isTeamMember()}" th:action="@{/team}" method="get" role="search" class="topbar-search web-only">
+                <i class="icon-search" aria-hidden="true"></i>
+                <label for="shell-q" class="hidden">Search</label>
+                <input id="shell-q" name="q" type="search" placeholder="Search claims, vendors" th:value="${q}">
+            </form>
+            <span class="web-only" style="flex:1"></span>
+            <a th:href="@{/notifications}" class="topbar-bell" th:attr="aria-label=${unreadCount != null and unreadCount > 0} ? ${unreadCount} + ' unread notifications' : 'Notifications'">
+                <i class="icon-bell" aria-hidden="true"></i>
+                <span th:if="${unreadCount != null and unreadCount > 0}" class="count" th:text="${unreadCount > 99 ? '99+' : unreadCount}" aria-hidden="true">3</span>
+            </a>
+            <details class="user-menu">
+                <summary class="avatar avatar-light" th:text="${@fmt.initials(me.name())}" th:attr="aria-label='Account: ' + ${me.name()}">AI</summary>
+                <div class="user-menu-panel">
+                    <b th:text="${me.name()}">Name</b>
+                    <form th:action="@{/logout}" method="post" style="margin:0"><button type="submit" class="btn btn-secondary" style="width:100%">Sign out</button></form>
+                </div>
+            </details>
+        </header>
+        <nav class="phone-tabs" aria-label="Main">
+            <th:block th:replace="~{fragments/shell :: navItems(${active})}"></th:block>
+        </nav>
+        <main id="main" class="page">
+            <div th:if="${success}" role="status" class="notice notice-ok"><i class="icon-circle-check" aria-hidden="true"></i><span th:text="${success}">Saved</span></div>
+            <div th:if="${error}" role="alert" class="notice notice-warn"><i class="icon-circle-alert" aria-hidden="true"></i><span th:text="${error}">Error</span></div>
+            <th:block th:replace="${content}"></th:block>
+        </main>
+    </div>
+</div>
+</body>
+</html>

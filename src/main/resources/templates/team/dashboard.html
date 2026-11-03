@@ -1,57 +1,57 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head('My team')}"></head>
-<body>
-<div th:replace="~{fragments/layout :: nav}"></div>
-<main id="main" class="max-w-6xl mx-auto px-4 py-6 space-y-6">
-    <div th:replace="~{fragments/flash :: flash}"></div>
-    <div class="flex flex-wrap items-center justify-between gap-3">
-        <div>
-            <h1 class="text-2xl font-semibold" th:text="${team.summary().name()}">Team</h1>
-            <p class="text-sm text-slate-600">
-                <span th:text="${team.summary().program().label()}">Pratham</span> ·
-                <span th:text="${team.summary().cohortName()}">Cohort</span>
-            </p>
-        </div>
-        <a th:href="@{/claims/new}" class="btn btn-primary">+ New claim</a>
+<!-- Screen 04 of the design handoff: the team's home page. Markup follows design.html, section "04 Team dashboard". -->
+<head th:replace="~{fragments/shell :: head('Our claims')}"></head>
+<body th:replace="~{fragments/shell :: page('claims', ~{::#content})}">
+<div id="content" style="display:contents" th:with="budget=${team.summary().budget()}">
+
+    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between">
+        <div><span class="text-muted" style="font-size:13px" th:text="'Team ' + ${team.summary().name()} + ' · ' + ${team.summary().cohortName()}">Team MedTrack · Cohort 2026-A</span><h1 style="margin:0;font-size:34px">Our claims</h1></div>
+        <a th:href="@{/claims/new}" class="btn btn-primary" style="min-height:44px;font-size:15px"><i class="icon-plus" style="font-size:18px" aria-hidden="true"></i>New claim</a>
     </div>
 
-    <div th:replace="~{fragments/budget :: meter(${team.summary().budget()}, 'Your budget')}"></div>
+    <!-- One banner per returned claim: the team has to act on these. -->
+    <div th:each="r : ${returned}" role="status" class="notice notice-warn"><i class="icon-undo-2" aria-hidden="true"></i>
+        <div style="flex:1"><b th:text="${r.publicCode()} + ' was returned.'">NRM-2026-00042 was returned.</b>
+            <th:block th:if="${r.decisionReason() != null}" th:text="'&quot;' + ${r.decisionReason()} + '&quot;'">"The invoice is a pro-forma."</th:block>
+            <a th:href="@{/claims/{id}/edit(id=${r.id()})}">Fix and resubmit</a></div>
+    </div>
 
-    <p class="text-sm text-slate-600">Nirmaan funding is seed money, not a grant: spend on approved items first, then claim reimbursement here with the invoice and payment proof.
-        <a th:href="@{/categories}" class="text-brand-700 underline">What can I claim?</a></p>
-
-    <section class="card" aria-labelledby="claims-title">
-        <h2 id="claims-title" class="px-4 pt-4 font-semibold">Claims</h2>
-        <div th:if="${claims.isEmpty()}" class="p-8 text-center text-slate-600">
-            <p>No claims yet.</p>
-            <a th:href="@{/claims/new}" class="btn btn-primary mt-3">Create your first claim</a>
+    <!-- Budget: paid or approved (solid), in review (light), the rest is left. -->
+    <section class="blueprint" aria-labelledby="budget-title" style="padding:18px;background:#fff;display:flex;flex-direction:column;gap:10px"
+             th:with="used=${budget.committed().add(budget.pending())}">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px"><span id="budget-title" style="font-family:var(--font-heading);font-weight:600;font-size:18px">Budget</span><span style="font-family:'JetBrains Mono';font-size:14px" th:text="${@fmt.inrWhole(used)} + ' used of ' + ${@fmt.inrWhole(budget.total())}">₹62,450 used of ₹1,00,000</span></div>
+        <div style="height:10px;background:var(--color-accent-100);display:flex" aria-hidden="true">
+            <div style="background:var(--color-accent)" th:style="'background:var(--color-accent);width:' + ${budget.paidPercent() + budget.approvedPercent()} + '%'"></div>
+            <div th:style="'background:var(--color-accent-400);width:' + ${budget.pendingPercent()} + '%'"></div>
         </div>
-        <ul th:unless="${claims.isEmpty()}" class="divide-y divide-slate-200 mt-2">
-            <li th:each="c : ${claims}">
-                <a th:href="${c.status().isEditableByTeam()} ? @{/claims/{id}/edit(id=${c.id()})} : @{/claims/{id}(id=${c.id()})}"
-                   class="flex items-center justify-between gap-3 px-4 py-3 hover:bg-slate-50">
-                    <div class="min-w-0">
-                        <p class="font-medium truncate"><span th:text="${c.vendorName()}">Vendor</span>
-                            <span class="text-slate-500 text-sm" th:text="'· ' + ${c.categoryName()}"></span></p>
-                        <p class="text-xs text-slate-500"><span th:text="${c.publicCode()}">NRM</span> · <span th:text="${@fmt.date(c.expenseDate())}"></span></p>
-                    </div>
-                    <div class="text-right shrink-0">
-                        <p class="font-semibold" th:text="${@fmt.inr(c.approvedAmount() ?: c.claimedAmount())}">₹</p>
-                        <span th:replace="~{fragments/layout :: status(${c.status()})}"></span>
-                        <th:block th:if="${c.priority()}"><span th:replace="~{fragments/layout :: priority}"></span></th:block>
-                    </div>
-                </a>
-            </li>
-        </ul>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--color-neutral-800)">
+            <span style="display:flex;gap:6px;align-items:center"><span style="width:10px;height:10px;background:var(--color-accent)"></span><th:block th:text="'Paid or approved ' + ${@fmt.inrWhole(budget.committed())}">Paid or approved ₹52,130</th:block></span>
+            <span style="display:flex;gap:6px;align-items:center"><span style="width:10px;height:10px;background:var(--color-accent-400)"></span><th:block th:text="'In review ' + ${@fmt.inrWhole(budget.pending())}">In review ₹10,320</th:block></span>
+            <span th:text="${@fmt.inrWhole(budget.remainingAfterPending())} + ' left'">₹37,550 left</span>
+        </div>
     </section>
 
-    <section class="card p-4" aria-labelledby="members-title">
-        <h2 id="members-title" class="font-semibold">Team members</h2>
-        <ul class="mt-2 text-sm text-slate-700">
-            <li th:each="m : ${team.members()}" th:text="${m.name()} + ' — ' + ${m.email()}"></li>
-        </ul>
+    <section aria-label="Claims" style="display:flex;flex-direction:column;background:#fff;border:1px solid var(--color-divider)">
+        <div th:if="${claims.isEmpty()}" style="padding:28px 16px;text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center">
+            <span th:text="${q != ''} ? 'No claims match “' + ${q} + '”.' : 'No claims yet.'">No claims yet.</span>
+            <a th:if="${q != ''}" th:href="@{/team}">Show all claims</a>
+            <a th:unless="${q != ''}" th:href="@{/claims/new}" class="btn btn-primary" style="min-height:44px;font-size:15px"><i class="icon-plus" style="font-size:18px" aria-hidden="true"></i>Create your first claim</a>
+        </div>
+        <a th:each="c : ${claims}" class="row-link"
+           th:href="${c.status().isEditableByTeam()} ? @{/claims/{id}/edit(id=${c.id()})} : @{/claims/{id}(id=${c.id()})}"
+           style="display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;padding:14px 16px;border-bottom:1px solid var(--color-neutral-200)">
+            <div style="flex:1 1 260px;display:flex;flex-direction:column;gap:2px;min-width:0">
+                <span style="font:500 12px 'JetBrains Mono';color:var(--color-neutral-700)" th:text="${c.publicCode()} + ' · ' + ${@fmt.shortDate(c.expenseDate())}">NRM-2026-00042 · 26 Oct</span>
+                <span style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" th:text="${c.justification()}">Motor controllers ×4</span>
+                <span style="font-size:13px;color:var(--color-neutral-700)" th:text="${c.vendorName()}">Robu.in</span>
+            </div>
+            <span th:if="${c.priority()}" class="tag" style="background:#B42318;color:#fff;font-weight:700">Priority</span>
+            <span class="tag" th:style="${@fmt.statusTagStyle(c.status())} + ';font-weight:600'" th:text="${c.status().label()}">Returned</span>
+            <span style="font:500 15px 'JetBrains Mono';min-width:110px;text-align:right" th:text="${@fmt.inr(c.approvedAmount() ?: c.claimedAmount())}">₹18,450.00</span>
+        </a>
     </section>
-</main>
+</div>
 </body>
 </html>

@@ -23,5 +23,7 @@ public record ClaimRow(
         Instant submittedAt,
         Instant stageEnteredAt,
         String verifiedByName,
-        long version) {
+        long version,
+        String justification,
+        String decisionReason) {
 }

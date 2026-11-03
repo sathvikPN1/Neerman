@@ -24,6 +24,40 @@ public class ViewHelpers {
         return Money.formatInr(amount);
     }
 
+    public String inrWhole(BigDecimal amount) {
+        return Money.formatInrWhole(amount);
+    }
+
+    public String shortDate(LocalDate date) {
+        return TimeFormats.shortDate(date);
+    }
+
+    /** Up to two initials for an avatar: "Anita Subramanian" → "AS". */
+    public String initials(String name) {
+        if (name == null || name.isBlank()) {
+            return "?";
+        }
+        String[] parts = name.trim().split("\\s+");
+        String first = parts[0].substring(0, 1);
+        return (parts.length == 1 ? first : first + parts[parts.length - 1].charAt(0)).toUpperCase();
+    }
+
+    /** Inline colours of a status tag in the redesigned screens (palette from the design handoff). */
+    public String statusTagStyle(ClaimStatus status) {
+        if (status == null) {
+            return "background:#EEF1EF;color:#4A5650";
+        }
+        return switch (status) {
+            case DRAFT -> "background:#EEF1EF;color:#4A5650";
+            case SUBMITTED -> "background:#E7EFF9;color:#1F4F8A";
+            case VERIFIED -> "background:#FFF3D6;color:#6B4600";
+            case RETURNED -> "background:#FDEBDD;color:#7A3410";
+            case APPROVED -> "background:var(--color-accent-100);color:var(--color-accent-800)";
+            case PAID -> "background:#DDF2F2;color:#0B5A62";
+            case REJECTED -> "background:#FBE4E5;color:#A3212B";
+        };
+    }
+
     public String date(LocalDate date) {
         return TimeFormats.date(date);
     }

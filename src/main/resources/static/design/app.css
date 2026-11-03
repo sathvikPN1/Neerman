@@ -1,0 +1,100 @@
+/*
+ * Additions for the redesigned screens. design-system.css (from the design handoff) stays unchanged;
+ * everything here uses its tokens. Colours that are not tokens are the ones used in design.html
+ * (warning banner #FDEBDD/#7A3410, priority #B42318).
+ */
+
+.hidden { display: none !important; }
+
+/* — notices (flash messages, sign-in messages, returned-claim banners) — */
+.notice { display: flex; gap: 12px; padding: 14px 16px; font-size: 14px; align-items: flex-start; line-height: 1.45; }
+.notice > i { font-size: 18px; margin-top: 2px; }
+.notice-warn { background: #FDEBDD; color: #7A3410; }
+.notice-warn a { color: #7A3410; font-weight: 600; }
+.notice-ok { background: var(--color-accent-100); color: var(--color-accent-800); }
+
+/* — password show/hide — */
+.pw-wrap { position: relative; }
+.pw-wrap .input { padding-right: 44px; }
+.pw-toggle {
+    position: absolute; top: 0; right: 0; width: 44px; height: 100%;
+    display: grid; place-items: center; padding: 0; cursor: pointer;
+    background: transparent; border: 0; color: var(--color-neutral-700); font-size: 18px;
+}
+.pw-toggle:hover { color: var(--color-accent); }
+.pw-toggle:focus-visible { outline-offset: -2px; }
+
+/* — app shell: sidebar on web, brand bar + tabs on phone (design screens 04–18) — */
+.shell {
+    display: grid; grid-template-columns: 232px minmax(0, 1fr); min-height: 100vh;
+    background: var(--color-bg); border-top: 3px solid var(--color-accent-500);
+}
+.shell-aside {
+    position: sticky; top: 0; height: calc(100vh - 3px); overflow-y: auto;
+    background: var(--color-accent-900); color: #fff;
+    display: flex; flex-direction: column; gap: 2px; padding: 16px 12px;
+}
+.shell-aside .nav-item {
+    display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 10px;
+    text-decoration: none; font-size: 14px; color: var(--color-accent-200);
+    border-left: 2px solid transparent;
+}
+.shell-aside a.nav-item { color: var(--color-accent-200); }
+.shell-aside .nav-item:hover { background: rgba(255, 255, 255, .08); }
+.shell-aside a.nav-item[aria-current='page'] { color: #fff; background: rgba(255, 255, 255, .12); border-left-color: var(--color-accent-500); }
+.shell-aside .nav-item i { font-size: 18px; }
+.side-signout { padding: 0; border: 0; background: none; font: inherit; color: var(--color-accent-300); cursor: pointer; text-align: left; }
+.side-signout:hover { text-decoration: underline; }
+
+.shell-main { display: flex; flex-direction: column; min-width: 0; }
+.topbar { display: flex; align-items: center; gap: 10px; padding: 12px 20px; background: #fff; }
+.topbar-search {
+    flex: 1; display: flex; gap: 8px; align-items: center; min-height: 40px; padding: 0 12px;
+    border: 1px solid var(--color-divider); background: var(--color-surface); max-width: 420px;
+}
+.topbar-search input { flex: 1; min-width: 0; border: 0; background: transparent; font: inherit; font-size: 14px; color: var(--color-text); padding: 0; }
+.topbar-search input::placeholder { color: color-mix(in srgb, var(--color-text) 55%, transparent); }
+.topbar-search:focus-within { border-color: var(--color-accent); }
+.topbar-bell { position: relative; color: var(--color-text); text-decoration: none; display: grid; place-items: center; width: 32px; height: 32px; }
+.topbar-bell i { font-size: 20px; }
+.topbar-bell .count {
+    position: absolute; top: -2px; right: -4px; min-width: 16px; height: 16px; padding: 0 4px;
+    display: grid; place-items: center; border-radius: 8px;
+    background: #B42318; color: #fff; font-size: 10px; font-weight: 700; line-height: 1;
+}
+.avatar {
+    width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center;
+    font-size: 12px; font-weight: 700; flex: none;
+}
+.avatar-light { background: var(--color-accent-200); color: var(--color-accent-800); }
+.avatar-dark { background: var(--color-accent-300); color: var(--color-accent-900); }
+
+/* Avatar menu (name + sign out); the only way to sign out on phone, where the sidebar is hidden. */
+.user-menu { position: relative; }
+.user-menu > summary { list-style: none; cursor: pointer; }
+.user-menu > summary::-webkit-details-marker { display: none; }
+.user-menu-panel {
+    position: absolute; right: 0; top: calc(100% + 8px); z-index: 30; min-width: 220px;
+    display: flex; flex-direction: column; gap: 10px; padding: 14px 16px;
+    background: #fff; border: 1px solid var(--color-divider); box-shadow: var(--shadow-md); font-size: 14px;
+}
+
+.phone-tabs { display: none; gap: 4px; padding: 0 12px; overflow-x: auto; background: #fff; border-bottom: 1px solid var(--color-divider); }
+.phone-tabs a.nav-item { padding: 10px; white-space: nowrap; font-size: 14px; text-decoration: none; color: var(--color-text); border-bottom: 2px solid transparent; }
+.phone-tabs a.nav-item[aria-current='page'] { color: var(--color-accent-700); border-bottom-color: var(--color-accent); }
+.phone-tabs .nav-item i { display: none; }
+.phone-brand { display: none; }
+
+.page { padding: 24px 20px; display: flex; flex-direction: column; gap: 20px; max-width: 1040px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+
+/* List rows (claims, queues) */
+.row-link { color: inherit; text-decoration: none; }
+.shell a.row-link { color: inherit; }
+.row-link:hover { background: var(--color-accent-100); }
+
+@media (max-width: 767px) {
+    .shell { grid-template-columns: minmax(0, 1fr); }
+    .shell-aside, .web-only { display: none !important; }
+    .phone-brand { display: contents; }
+    .phone-tabs { display: flex; }
+}

@@ -8,25 +8,8 @@
     <!-- Screen 01 of the "Industry" design handoff. design-system.css is copied unchanged from the handoff;
          the markup and inline styles follow design.html, section "01 Sign in". -->
     <link rel="stylesheet" th:href="@{/design/design-system.css}">
+    <link rel="stylesheet" th:href="@{/design/app.css}">
     <script th:src="@{/js/app.js}" defer></script>
-    <style>
-        /* Page-only additions, built from design-system tokens: the password show/hide button,
-           and the sign-in messages (banner colours taken from the warning banner in design.html). */
-        .hidden { display: none; }
-        .pw-wrap { position: relative; }
-        .pw-wrap .input { padding-right: 44px; }
-        .pw-toggle {
-            position: absolute; top: 0; right: 0; width: 44px; height: 100%;
-            display: grid; place-items: center; padding: 0; cursor: pointer;
-            background: transparent; border: 0; color: var(--color-neutral-700); font-size: 18px;
-        }
-        .pw-toggle:hover { color: var(--color-accent); }
-        .pw-toggle:focus-visible { outline-offset: -2px; }
-        .notice { display: flex; gap: 10px; padding: 12px 14px; font-size: 14px; align-items: flex-start; line-height: 1.4; }
-        .notice i { font-size: 18px; line-height: 1.1; }
-        .notice-warn { background: #FDEBDD; color: #7A3410; }
-        .notice-ok { background: var(--color-accent-100); color: var(--color-accent-800); }
-    </style>
 </head>
 <body>
 <main id="main" style="background:var(--color-bg);min-height:100vh;display:flex;flex-wrap:wrap;border-top:3px solid var(--color-accent-500)">

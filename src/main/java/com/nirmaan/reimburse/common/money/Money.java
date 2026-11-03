@@ -54,6 +54,15 @@ public final class Money {
         return (negative ? "-₹" : "₹") + grouped + "." + fraction;
     }
 
+    /** Whole rupees with Indian grouping, for summaries: ₹1,25,000 */
+    public static String formatInrWhole(BigDecimal amount) {
+        if (amount == null) {
+            return "—";
+        }
+        String s = formatInr(amount.setScale(0, RoundingMode.HALF_UP));
+        return s.substring(0, s.length() - 3);
+    }
+
     /** Percentage of part in total, 0–100, rounded to whole number. */
     public static int percent(BigDecimal part, BigDecimal total) {
         if (total == null || total.signum() == 0 || part == null) {

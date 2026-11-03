@@ -162,7 +162,21 @@ class HappyPathIT extends IntegrationTest {
         fx.submitted(student, "5000");
         mvc.perform(get("/team").with(user(fx.principal(student))))
                 .andExpect(status().isOk())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("₹2,00,000.00")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("₹5,000 used of ₹2,00,000")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("In review ₹5,000")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("₹5,000.00")));
+    }
+
+    @Test
+    void teamDashboardSearchFiltersClaims() throws Exception {
+        Team team = fx.team();
+        User student = fx.member(team);
+        Long a = fx.draftWithDocuments(student, "100");
+        Long b = fx.draftWithDocuments(student, "200");
+        String code = fx.claim(a).getPublicCode();
+        mvc.perform(get("/team").param("q", code.toLowerCase()).with(user(fx.principal(student))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(code)))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString(fx.claim(b).getPublicCode()))));
     }
 }

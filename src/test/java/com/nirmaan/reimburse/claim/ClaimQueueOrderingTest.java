@@ -14,7 +14,7 @@ class ClaimQueueOrderingTest {
     static ClaimRow row(long id, boolean priority, String stageEntered) {
         return new ClaimRow(id, "NRM-" + id, 1L, "Team", "Cohort", "Parts", "Vendor", BigDecimal.TEN, null,
                 ClaimStatus.SUBMITTED, priority, null, false, null, null,
-                stageEntered == null ? null : Instant.parse(stageEntered), null, 0);
+                stageEntered == null ? null : Instant.parse(stageEntered), null, 0, null, null);
     }
 
     @Test

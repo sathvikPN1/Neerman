@@ -12,6 +12,7 @@ public final class TimeFormats {
 
     public static final ZoneId IST = ZoneId.of("Asia/Kolkata");
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH);
+    private static final DateTimeFormatter SHORT_DATE = DateTimeFormatter.ofPattern("d MMM", Locale.ENGLISH);
     private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a", Locale.ENGLISH);
 
     private TimeFormats() {
@@ -19,6 +20,11 @@ public final class TimeFormats {
 
     public static String date(LocalDate date) {
         return date == null ? "—" : DATE.format(date);
+    }
+
+    /** Day and month only, e.g. "26 Oct", for lists where the year is obvious. */
+    public static String shortDate(LocalDate date) {
+        return date == null ? "" : SHORT_DATE.format(date);
     }
 
     public static String date(Instant instant) {
