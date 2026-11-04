@@ -30,6 +30,13 @@
         <button class="btn btn-primary btn-lg">Save permissions</button>
     </form>
 
+    <div th:if="${user.active()}" class="panel" style="flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between">
+        <div style="display:flex;flex-direction:column"><b>Forgot their password?</b>
+            <span class="muted-sm">Email them a link to set a new password. It works for 24 hours; their current password keeps working until then.</span></div>
+        <form th:action="@{/admin/staff/{id}/password-reset(id=${user.id()})}" method="post" onsubmit="return confirm('Email a password reset link?')">
+            <button class="btn btn-secondary btn-lg"><i class="icon-key-round" aria-hidden="true"></i>Send password reset link</button></form>
+    </div>
+
     <div class="panel" style="flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between">
         <div style="display:flex;flex-direction:column"><b th:text="${user.active()} ? 'Deactivate account' : 'Reactivate account'">Deactivate account</b>
             <span class="muted-sm" th:text="${user.active()} ? 'They are signed out at once and can no longer sign in.' : 'They can sign in again with their existing permissions.'"></span></div>

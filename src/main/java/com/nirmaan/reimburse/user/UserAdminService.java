@@ -27,6 +27,7 @@ import static com.nirmaan.reimburse.common.audit.AuditService.detail;
 public class UserAdminService {
 
     static final Duration INVITE_TTL = Duration.ofDays(7);
+    static final Duration RESET_TTL = Duration.ofHours(24);
     static final int MIN_PASSWORD_LENGTH = 10;
 
     private final UserRepository users;
@@ -103,6 +104,33 @@ public class UserAdminService {
             throw new BusinessRuleException("This user has already activated their account.");
         }
         sendInvite(user);
+    }
+
+    /**
+     * "Forgot password": there is no self-service reset, so staff send the person a one-time link to set a new
+     * password. It goes to the account's own email. TEAM_MANAGE holders may do this for team members only.
+     */
+    @PreAuthorize("hasAuthority('STAFF_MANAGE') or hasAuthority('TEAM_MANAGE')")
+    @Transactional
+    public void sendPasswordReset(Long userId) {
+        User user = find(userId);
+        if (!user.isActive()) {
+            throw new BusinessRuleException("This account is deactivated. Reactivate it first.");
+        }
+        if (!CurrentUser.require().has(Permission.STAFF_MANAGE) && !user.hasRole(Role.TEAM_MEMBER)) {
+            throw new BusinessRuleException("Only the COO can reset a staff member's password.");
+        }
+        if (user.getPasswordHash() == null) {
+            sendInvite(user);
+            return;
+        }
+        String token = tokens.create(user.getId(), UserTokenService.INVITE, RESET_TTL);
+        notifications.sendEmail(new EmailMessage(user.getEmail(), "Reset your Nirmaan Reimbursements password",
+                "Hello " + user.getName() + ",\n\nNirmaan staff sent you a link to set a new password (valid for 24 hours):\n\n"
+                        + notifications.absolute("/invite/" + token)
+                        + "\n\nIf you didn't ask for this, ignore this email; your current password keeps working."
+                        + "\n\n— Nirmaan, IIT Madras"));
+        audit.record(AuditEntity.USER, user.getId(), "PASSWORD_RESET_SENT", detail("email", user.getEmail()));
     }
 
     private void sendInvite(User user) {

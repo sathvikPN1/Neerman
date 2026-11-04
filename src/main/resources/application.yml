@@ -26,6 +26,15 @@ spring:
     password: ${MAIL_PASSWORD:}
   thymeleaf:
     cache: ${THYMELEAF_CACHE:true}
+  # CSS/JS URLs carry a hash of the file (e.g. app-3f2a….css), so a browser or proxy can never
+  # show a page with yesterday's stylesheet after an update.
+  web:
+    resources:
+      chain:
+        strategy:
+          content:
+            enabled: true
+            paths: /**
   jackson:
     time-zone: UTC
 
@@ -81,6 +90,12 @@ app:
     login-max-attempts: 5
     login-lock-minutes: 15
   demo-data: ${DEMO_DATA:false}
+  # Shown on the "Forgot password?" page. From nirmaan.iitm.ac.in (contact section and FAQ).
+  support:
+    email: ${SUPPORT_EMAIL:Nirmaan@smail.iitm.ac.in}
+    manager-email: ${SUPPORT_MANAGER_EMAIL:manager.ie@imail.iitm.ac.in}
+    phone: ${SUPPORT_PHONE:}
+    address: ${SUPPORT_ADDRESS:Sudha & Shankar Innovation Hub, Indian Institute of Technology Madras, Chennai - 600036, India}
 
 logging:
   level:

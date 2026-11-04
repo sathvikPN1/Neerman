@@ -9,6 +9,7 @@ import com.nirmaan.reimburse.team.TeamDetail;
 import com.nirmaan.reimburse.team.TeamForm;
 import com.nirmaan.reimburse.team.TeamService;
 import com.nirmaan.reimburse.team.TeamSummary;
+import com.nirmaan.reimburse.user.UserAdminService;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
@@ -30,11 +31,14 @@ public class TeamAdminController {
     private final TeamService teams;
     private final CohortService cohorts;
     private final ClaimService claims;
+    private final UserAdminService userAdmin;
 
-    public TeamAdminController(TeamService teams, CohortService cohorts, ClaimService claims) {
+    public TeamAdminController(TeamService teams, CohortService cohorts, ClaimService claims,
+                               UserAdminService userAdmin) {
         this.teams = teams;
         this.cohorts = cohorts;
         this.claims = claims;
+        this.userAdmin = userAdmin;
     }
 
     @GetMapping("/teams")
@@ -108,6 +112,14 @@ public class TeamAdminController {
             teams.addMember(id, form);
             redirect.addFlashAttribute("success", "Invitation sent to " + form.email() + ".");
         }
+        return "redirect:/teams/" + id;
+    }
+
+    @PostMapping("/teams/{id}/members/{userId}/password-reset")
+    @PreAuthorize("hasAuthority('TEAM_MANAGE')")
+    public String sendPasswordReset(@PathVariable Long id, @PathVariable Long userId, RedirectAttributes redirect) {
+        userAdmin.sendPasswordReset(userId);
+        redirect.addFlashAttribute("success", "Password reset link sent. It works for 24 hours.");
         return "redirect:/teams/" + id;
     }
 
