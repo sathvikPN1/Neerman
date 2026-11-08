@@ -157,7 +157,7 @@ input[type='checkbox'] { accent-color: var(--color-accent); }
 /* Expandable rows built on <details> (approvals, cohorts, categories) */
 details.expand > summary { list-style: none; cursor: pointer; }
 details.expand > summary::-webkit-details-marker { display: none; }
-details.expand[open] .chev-down, details.expand:not([open]) .chev-up { display: none; }
+details.expand[open] > summary .chev-down, details.expand:not([open]) > summary .chev-up { display: none; }
 .text-link { background: none; border: 0; padding: 0; font: inherit; color: var(--color-accent-700); text-decoration: underline; cursor: pointer; }
 
 /* History timeline (claim detail) */
