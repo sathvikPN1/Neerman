@@ -72,8 +72,11 @@ services:
       BOOTSTRAP_COO_PASSWORD: ${BOOTSTRAP_COO_PASSWORD:-Demo@1234}
       # Seed demo staff, teams and claims. Set to false for production.
       DEMO_DATA: ${DEMO_DATA:-true}
+      # Local demo only: lets the AI connector attach files dropped in ./inbox/<member email>/
+      MCP_INBOX_DIR: ${MCP_INBOX_DIR:-/inbox}
     volumes:
       - uploads:/data/uploads
+      - ./inbox:/inbox:ro
     ports:
       - "${APP_PORT:-8080}:8080"
 
