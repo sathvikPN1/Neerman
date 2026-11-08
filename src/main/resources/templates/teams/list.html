@@ -1,32 +1,36 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head th:replace="~{fragments/layout :: head('Teams')}"></head>
-<body>
-<div th:replace="~{fragments/layout :: nav}"></div>
-<main id="main" class="max-w-6xl mx-auto px-4 py-6 space-y-4">
-    <div th:replace="~{fragments/flash :: flash}"></div>
-    <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-semibold">Teams</h1>
-        <a sec:authorize="hasAuthority('TEAM_MANAGE')" th:href="@{/teams/new}" class="btn btn-primary">+ New team</a>
+<!-- Screen 10 of the design handoff: all teams as budget cards. Markup follows design.html, section "10 Teams list". -->
+<head th:replace="~{fragments/shell :: head('Teams')}"></head>
+<body th:replace="~{fragments/shell :: page('teams', ~{::#content})}">
+<div id="content" style="display:contents">
+
+    <div class="page-head">
+        <div><h1 class="page-title">Teams</h1><span class="text-muted" th:text="${teams.size()} + ' teams'">5 teams</span></div>
+        <a sec:authorize="hasAuthority('TEAM_MANAGE')" th:href="@{/teams/new}" class="btn btn-primary btn-md"><i class="icon-plus" aria-hidden="true"></i>New team</a>
     </div>
-    <div th:if="${teams.isEmpty()}" class="card p-10 text-center text-slate-600">No teams yet. Create a cohort first, then add teams.</div>
-    <div th:unless="${teams.isEmpty()}" class="card overflow-x-auto">
-        <table class="table w-full text-sm">
-            <thead><tr><th>Team</th><th>Program</th><th class="text-right">Budget</th><th class="text-right">Approved + paid</th><th class="text-right">Pending</th><th class="text-right">Remaining</th></tr></thead>
-            <tbody>
-            <tr th:each="t : ${teams}">
-                <td><a class="font-medium text-brand-700 underline" th:href="@{/teams/{id}(id=${t.id()})}" th:text="${t.name()}"></a>
-                    <th:block th:if="${t.priority()}"><span th:replace="~{fragments/layout :: priority}"></span></th:block>
-                    <div class="text-xs text-slate-500" th:text="${t.cohortName()} + ' · ' + ${t.memberCount()} + ' member(s)'"></div></td>
-                <td th:text="${t.program().label()}"></td>
-                <td class="text-right" th:text="${@fmt.inr(t.budget().total())}"></td>
-                <td class="text-right" th:text="${@fmt.inr(t.budget().committed())}"></td>
-                <td class="text-right" th:text="${@fmt.inr(t.budget().pending())}"></td>
-                <td class="text-right font-semibold" th:text="${@fmt.inr(t.budget().remaining())}"></td>
-            </tr>
-            </tbody>
-        </table>
+
+    <div th:if="${teams.isEmpty()}" class="list"><div class="empty"><i class="icon-users" style="font-size:28px;color:var(--color-accent)" aria-hidden="true"></i>
+        <span>No teams yet. Create a cohort first, then add teams.</span></div></div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px">
+        <a th:each="t : ${teams}" th:href="@{/teams/{id}(id=${t.id()})}" class="blueprint row-link"
+           th:with="used=${t.budget().paidPercent() + t.budget().approvedPercent()}"
+           th:style="'background:#fff;padding:16px;display:flex;flex-direction:column;gap:10px' + (${t.priority()} ? ';border-left:3px solid #B42318' : '')">
+            <th:block th:replace="~{fragments/shell :: corners}"></th:block>
+            <div style="display:flex;justify-content:space-between;gap:8px">
+                <div style="display:flex;flex-direction:column;min-width:0"><span class="card-title" style="font-size:20px" th:text="${t.name()}">MedTrack</span>
+                    <span class="text-muted" style="font-size:13px" th:text="${t.program().label()} + ' · ' + ${t.cohortName()} + ' · ' + ${t.memberCount()} + ' members'">Pratham · Cohort 2026-A · 4 members</span></div>
+                <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+                    <th:block th:if="${t.priority()}"><span th:replace="~{fragments/shell :: priority}"></span></th:block>
+                    <span th:if="${t.budget().pending().signum() > 0}" class="tag tag-accent" th:text="${@fmt.inrWhole(t.budget().pending())} + ' in review'">₹10,320 in review</span>
+                </div>
+            </div>
+            <div class="bar bar-thin" aria-hidden="true"><span th:class="${used > 85} ? 'warn' : 'used'" th:style="'width:' + ${used} + '%'"></span><span class="adding" th:style="'width:' + ${t.budget().pendingPercent()} + '%'"></span></div>
+            <div style="display:flex;justify-content:space-between;font-size:13px"><span th:text="${used} + '% of budget'">62% of budget</span>
+                <span class="mono" th:text="${@fmt.inrWhole(t.budget().committed())} + ' / ' + ${@fmt.inrWhole(t.budget().total())}">₹62,450 / ₹1,00,000</span></div>
+        </a>
     </div>
-</main>
+</div>
 </body>
 </html>
