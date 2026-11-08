@@ -1,33 +1,43 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head th:replace="~{fragments/layout :: head('Cohorts')}"></head>
-<body>
-<div th:replace="~{fragments/layout :: nav}"></div>
-<main id="main" class="max-w-4xl mx-auto px-4 py-6 space-y-4">
-    <div th:replace="~{fragments/flash :: flash}"></div>
-    <h1 class="text-2xl font-semibold">Cohorts</h1>
-    <form sec:authorize="hasAuthority('COHORT_MANAGE')" th:action="@{/cohorts}" method="post" class="card p-4 grid sm:grid-cols-4 gap-2 items-end">
-        <div class="sm:col-span-2"><label class="label" for="name">New cohort name</label><input class="input" id="name" name="name" placeholder="Pratham Jan 2027" required></div>
-        <div><label class="label" for="startDate">Start</label><input class="input" id="startDate" name="startDate" type="date" required></div>
-        <div><label class="label" for="endDate">End</label><input class="input" id="endDate" name="endDate" type="date" required></div>
-        <button class="btn btn-primary sm:col-span-4 sm:justify-self-start">Create cohort</button>
+<!-- Screen 13 of the design handoff: cohorts. Tap the pencil to edit a cohort in place. Markup follows design.html, section "13 Cohorts". -->
+<head th:replace="~{fragments/shell :: head('Cohorts')}"></head>
+<body th:replace="~{fragments/shell :: page('cohorts', ~{::#content})}">
+<div id="content" style="display:contents">
+
+    <h1 class="page-title">Cohorts</h1>
+
+    <div class="list">
+        <div th:if="${cohorts.isEmpty()}" class="empty"><i class="icon-layers" style="font-size:28px;color:var(--color-accent)" aria-hidden="true"></i><span>No cohorts yet.</span></div>
+        <details th:each="c : ${cohorts}" class="expand" style="border-bottom:1px solid var(--color-neutral-200)">
+            <summary style="display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;padding:14px 16px">
+                <div style="flex:1 1 200px;display:flex;flex-direction:column"><b style="font-size:16px" th:text="${c.name()}">Cohort 2026-B</b>
+                    <span class="text-muted" style="font-size:13px" th:text="${@fmt.date(c.startDate())} + ' – ' + ${@fmt.date(c.endDate())}">1 Jul 2026 – 31 Dec 2026</span></div>
+                <span style="font-size:14px" th:text="${c.teamCount()} + ' teams'">2 teams</span>
+                <span th:if="${c.endDate().isBefore(@fmt.today())}" class="tag tag-muted">Closed</span>
+                <span th:unless="${c.endDate().isBefore(@fmt.today())}" class="tag tag-accent">Active</span>
+                <span sec:authorize="hasAuthority('COHORT_MANAGE')" class="btn btn-ghost btn-icon" aria-hidden="true"><i class="icon-pencil"></i></span>
+            </summary>
+            <form sec:authorize="hasAuthority('COHORT_MANAGE')" th:action="@{/cohorts}" method="post" class="form-grid-sm" style="padding:0 16px 16px;margin:0">
+                <input type="hidden" name="id" th:value="${c.id()}">
+                <div class="field"><label th:for="'n' + ${c.id()}">Name</label><input class="input" th:id="'n' + ${c.id()}" name="name" th:value="${c.name()}" required></div>
+                <div class="field"><label th:for="'s' + ${c.id()}">Starts</label><input class="input" th:id="'s' + ${c.id()}" name="startDate" type="date" th:value="${c.startDate()}" required></div>
+                <div class="field"><label th:for="'e' + ${c.id()}">Ends</label><input class="input" th:id="'e' + ${c.id()}" name="endDate" type="date" th:value="${c.endDate()}" required></div>
+                <button class="btn btn-secondary btn-md">Save</button>
+            </form>
+        </details>
+    </div>
+
+    <form sec:authorize="hasAuthority('COHORT_MANAGE')" th:action="@{/cohorts}" method="post" class="blueprint" style="padding:16px;background:#fff;display:flex;flex-direction:column;gap:12px;margin:0">
+        <th:block th:replace="~{fragments/shell :: corners}"></th:block>
+        <span class="card-title">Add cohort</span>
+        <div class="form-grid-sm">
+            <div class="field"><label for="name">Name</label><input class="input" id="name" name="name" placeholder="Pratham Jan 2027" required></div>
+            <div class="field"><label for="startDate">Starts</label><input class="input" id="startDate" name="startDate" type="date" required></div>
+            <div class="field"><label for="endDate">Ends</label><input class="input" id="endDate" name="endDate" type="date" required></div>
+            <button class="btn btn-primary btn-md"><i class="icon-plus" aria-hidden="true"></i>Add</button>
+        </div>
     </form>
-    <p th:if="${cohorts.isEmpty()}" class="card p-8 text-center text-slate-600">No cohorts yet.</p>
-    <ul class="space-y-2">
-        <li th:each="c : ${cohorts}" class="card p-3">
-            <details>
-                <summary class="flex justify-between gap-2"><span class="font-medium" th:text="${c.name()}"></span>
-                    <span class="text-sm text-slate-600" th:text="${@fmt.date(c.startDate())} + ' – ' + ${@fmt.date(c.endDate())} + ' · ' + ${c.teamCount()} + ' team(s)'"></span></summary>
-                <form sec:authorize="hasAuthority('COHORT_MANAGE')" th:action="@{/cohorts}" method="post" class="mt-3 grid sm:grid-cols-4 gap-2 items-end">
-                    <input type="hidden" name="id" th:value="${c.id()}">
-                    <div class="sm:col-span-2"><label class="label" th:for="'n' + ${c.id()}">Name</label><input class="input" th:id="'n' + ${c.id()}" name="name" th:value="${c.name()}" required></div>
-                    <div><label class="label" th:for="'s' + ${c.id()}">Start</label><input class="input" th:id="'s' + ${c.id()}" name="startDate" type="date" th:value="${c.startDate()}" required></div>
-                    <div><label class="label" th:for="'e' + ${c.id()}">End</label><input class="input" th:id="'e' + ${c.id()}" name="endDate" type="date" th:value="${c.endDate()}" required></div>
-                    <button class="btn btn-ghost">Save</button>
-                </form>
-            </details>
-        </li>
-    </ul>
-</main>
+</div>
 </body>
 </html>
