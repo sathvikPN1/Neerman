@@ -1,38 +1,41 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head('Payments')}"></head>
-<body>
-<div th:replace="~{fragments/layout :: nav}"></div>
-<main id="main" class="max-w-5xl mx-auto px-4 py-6 space-y-4">
-    <div th:replace="~{fragments/flash :: flash}"></div>
-    <h1 class="text-2xl font-semibold">Payment queue</h1>
-    <p class="text-sm text-slate-600">Approved claims waiting for payment, priority first. Bank details and batch payouts arrive in the next release.</p>
+<!-- Screen 09 of the design handoff: finance payment queue. Markup follows design.html, section "09 Payment queue". -->
+<head th:replace="~{fragments/shell :: head('Payments')}"></head>
+<body th:replace="~{fragments/shell :: page('payments', ~{::#content})}">
+<div id="content" style="display:contents">
 
-    <div th:if="${rows.isEmpty()}" class="card p-10 text-center text-slate-600">No approved claims waiting for payment.</div>
+    <div class="page-head">
+        <div><h1 class="page-title">Payment queue</h1>
+            <span class="text-muted" th:text="${rows.size()} + ' approved · priority first'">3 approved · priority first</span></div>
+    </div>
 
-    <ul class="space-y-3">
-        <li th:each="r : ${rows}" class="card p-4" th:classappend="${r.priority()} ? 'border-rose-300'">
-            <div class="flex flex-wrap items-start justify-between gap-2">
-                <div>
-                    <a class="font-semibold text-brand-700 underline" th:href="@{/claims/{id}(id=${r.id()})}" th:text="${r.publicCode()}"></a>
-                    <th:block th:if="${r.priority()}"><span th:replace="~{fragments/layout :: priority}"></span></th:block>
-                    <p class="text-sm text-slate-600"><span th:text="${r.teamName()}"></span> · <span th:text="${r.vendorName()}"></span> ·
-                        approved <span th:text="${@fmt.age(r.stageEnteredAt())}"></span> ago</p>
-                </div>
-                <p class="text-lg font-semibold" th:text="${@fmt.inr(r.approvedAmount())}">₹</p>
+    <div th:if="${rows.isEmpty()}" class="list"><div class="empty"><i class="icon-banknote" style="font-size:28px;color:var(--color-accent)" aria-hidden="true"></i>
+        <span>No approved claims waiting for payment.</span></div></div>
+
+    <div th:each="r : ${rows}" class="blueprint" style="background:#fff;padding:16px;display:flex;flex-direction:column;gap:12px"
+         th:style="'background:#fff;padding:16px;display:flex;flex-direction:column;gap:12px;border-left:3px solid ' + (${r.priority()} ? '#B42318' : 'var(--color-divider)')">
+        <th:block th:replace="~{fragments/shell :: corners}"></th:block>
+        <div style="display:flex;flex-wrap:wrap;gap:6px 16px;align-items:flex-start">
+            <div style="flex:1 1 220px;display:flex;flex-direction:column;gap:3px;min-width:0">
+                <div style="display:flex;gap:8px;align-items:center"><a th:href="@{/claims/{id}(id=${r.id()})}" style="font:500 14px 'JetBrains Mono'" th:text="${r.publicCode()}">NRM-2026-00003</a>
+                    <th:block th:if="${r.priority()}"><span th:replace="~{fragments/shell :: priority}"></span></th:block></div>
+                <span style="font-size:14px;color:var(--color-neutral-800)" th:text="${r.teamName()} + ' · ' + ${r.vendorName()} + ' · approved ' + ${@fmt.age(r.stageEnteredAt())} + ' ago'">MedTrack · Autodesk India · approved 1 day ago</span>
             </div>
-            <form th:action="@{/finance/payments/{id}(id=${r.id()})}" method="post" class="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-2 items-end">
-                <input type="hidden" name="version" th:value="${r.version()}">
-                <div><label class="label" th:for="'paidOn-' + ${r.id()}">Paid on</label>
-                    <input class="input" type="date" name="paidOn" th:id="'paidOn-' + ${r.id()}" th:value="${@fmt.today()}" th:max="${@fmt.today()}" required></div>
-                <div><label class="label" th:for="'mode-' + ${r.id()}">Mode</label>
-                    <select class="input" name="mode" th:id="'mode-' + ${r.id()}"><option th:each="m : ${modes}" th:value="${m}" th:text="${m}"></option></select></div>
-                <div><label class="label" th:for="'utr-' + ${r.id()}">UTR / reference</label>
-                    <input class="input" name="utr" th:id="'utr-' + ${r.id()}" maxlength="40" required></div>
-                <button class="btn btn-success">Mark as paid</button>
-            </form>
-        </li>
-    </ul>
-</main>
+            <span class="money-xl" th:text="${@fmt.inr(r.approvedAmount())}">₹12,999.00</span>
+        </div>
+        <form th:action="@{/finance/payments/{id}(id=${r.id()})}" method="post" class="form-grid-sm" style="margin:0">
+            <input type="hidden" name="version" th:value="${r.version()}">
+            <div class="field"><label th:for="'paidOn-' + ${r.id()}">Paid on</label>
+                <input class="input" type="date" name="paidOn" th:id="'paidOn-' + ${r.id()}" th:value="${@fmt.today()}" th:max="${@fmt.today()}" required></div>
+            <div class="field"><label th:for="'mode-' + ${r.id()}">Mode</label>
+                <select class="input" name="mode" th:id="'mode-' + ${r.id()}"><option th:each="m : ${modes}" th:value="${m}" th:text="${m}">NEFT</option></select></div>
+            <div class="field"><label th:for="'utr-' + ${r.id()}">UTR / reference</label>
+                <input class="input mono" name="utr" th:id="'utr-' + ${r.id()}" maxlength="40" required placeholder="UTR number"></div>
+            <button class="btn btn-primary btn-md"><i class="icon-check" aria-hidden="true"></i>Mark as paid</button>
+        </form>
+    </div>
+    <p th:unless="${rows.isEmpty()}" class="muted-sm" style="margin:0">Bank details and batch payouts arrive in the next release.</p>
+</div>
 </body>
 </html>
