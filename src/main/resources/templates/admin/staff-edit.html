@@ -1,49 +1,47 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head(${user.name()})}"></head>
-<body>
-<div th:replace="~{fragments/layout :: nav}"></div>
-<main id="main" class="max-w-3xl mx-auto px-4 py-6 space-y-6">
-    <div th:replace="~{fragments/flash :: flash}"></div>
-    <a th:href="@{/admin/staff}" class="text-sm text-brand-700 underline">← Staff &amp; permissions</a>
-    <div>
-        <h1 class="text-2xl font-semibold" th:text="${user.name()}"></h1>
-        <p class="text-sm text-slate-600"><span th:text="${user.email()}"></span> · <span th:text="${user.role().label()}"></span></p>
-    </div>
+<!-- Screen 16 of the design handoff: one person's permissions. Markup follows design.html, section "16 Edit permissions". -->
+<head th:replace="~{fragments/shell :: head(${user.name()})}"></head>
+<body th:replace="~{fragments/shell :: page('staff', ~{::#content})}">
+<div id="content" style="display:contents">
+<div class="page-narrow">
 
-    <form th:action="@{/admin/staff/{id}/permissions(id=${user.id()})}" method="post" class="card p-4 space-y-3">
-        <fieldset>
-            <legend class="font-semibold">Permissions</legend>
-            <p class="hint">Tick what this person may do. Optionally set a last day (inclusive) — the permission then expires automatically, e.g. CLAIM_APPROVE while the COO is on leave. STAFF_MANAGE belongs to the COO only.</p>
-            <div class="divide-y mt-2">
-                <div th:each="p : ${grantable}" class="py-2 grid sm:grid-cols-[1fr_11rem] gap-2 items-center">
-                    <label class="flex items-start gap-2">
-                        <input type="checkbox" name="perm" th:value="${p}" th:checked="${held.contains(p)}" class="mt-1 h-4 w-4">
-                        <span><span class="font-mono text-sm" th:text="${p}"></span><br><span class="text-xs text-slate-600" th:text="${p.description()}"></span></span>
-                    </label>
-                    <div>
-                        <label class="sr-only" th:for="'exp-' + ${p}" th:text="'Last day for ' + ${p}"></label>
-                        <input class="input text-sm" type="date" th:id="'exp-' + ${p}" th:name="'expires_' + ${p}" th:value="${expiry[p.name()]}" th:min="${@fmt.today()}" aria-describedby="exp-hint">
-                    </div>
+    <div><a th:href="@{/admin/staff}" class="back-link"><i class="icon-arrow-left" aria-hidden="true"></i>Staff</a>
+        <h1 class="page-title" style="margin-top:2px" th:text="${user.name()}">Rahul Menon</h1>
+        <span class="text-muted" th:text="${user.email()} + ' · ' + ${user.role().label()}">rahul.menon@nirmaan.iitm.ac.in · Nirmaan staff</span></div>
+
+    <form th:action="@{/admin/staff/{id}/permissions(id=${user.id()})}" method="post" style="display:flex;flex-direction:column;gap:16px;margin:0">
+        <fieldset class="blueprint" style="padding:16px;background:#fff;margin:0">
+            <th:block th:replace="~{fragments/shell :: corners}"></th:block>
+            <legend class="hidden">Permissions</legend>
+            <span class="card-kicker">Permissions</span>
+            <p class="hint" style="margin:4px 0 6px">Tick what this person may do. A last day (inclusive) makes the permission expire on its own, e.g. CLAIM_APPROVE while the COO is on leave. STAFF_MANAGE belongs to the COO only.</p>
+            <div th:each="p : ${grantable}" style="display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:8px 0;min-height:44px;border-bottom:1px solid var(--color-neutral-200)">
+                <label class="check" style="flex:1 1 260px;gap:12px">
+                    <input type="checkbox" name="perm" th:value="${p}" th:checked="${held.contains(p)}" style="width:20px;height:20px">
+                    <span style="display:flex;flex-direction:column"><b th:text="${p.description()}">Verify claims</b><span class="mono text-muted" style="font-size:12px" th:text="${p}">CLAIM_VERIFY</span></span>
+                </label>
+                <div style="flex:0 1 180px">
+                    <label class="hidden" th:for="'exp-' + ${p}" th:text="'Last day for ' + ${p}"></label>
+                    <input class="input" type="date" th:id="'exp-' + ${p}" th:name="'expires_' + ${p}" th:value="${expiry[p.name()]}" th:min="${@fmt.today()}" aria-describedby="exp-hint" style="min-height:40px">
                 </div>
             </div>
-            <p id="exp-hint" class="hint">Leave the date empty for no expiry.</p>
+            <p id="exp-hint" class="hint" style="margin:8px 0 0">Leave the date empty for no expiry.</p>
         </fieldset>
-        <button class="btn btn-primary">Save permissions</button>
+        <button class="btn btn-primary btn-lg">Save permissions</button>
     </form>
 
-    <section class="card p-4 flex flex-wrap items-center justify-between gap-3">
-        <div>
-            <h2 class="font-semibold" th:text="${user.active()} ? 'Deactivate user' : 'Reactivate user'"></h2>
-            <p class="text-sm text-slate-600" th:text="${user.active()} ? 'They are signed out immediately and can no longer sign in.' : 'They can sign in again with their existing permissions.'"></p>
-        </div>
-        <form th:if="${user.active()}" th:action="@{/admin/staff/{id}/deactivate(id=${user.id()})}" method="post" onsubmit="return confirm('Deactivate this user?')">
-            <button class="btn btn-danger">Deactivate</button>
+    <section class="panel" style="flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between">
+        <div style="display:flex;flex-direction:column"><b th:text="${user.active()} ? 'Deactivate account' : 'Reactivate account'">Deactivate account</b>
+            <span class="muted-sm" th:text="${user.active()} ? 'They are signed out at once and can no longer sign in.' : 'They can sign in again with their existing permissions.'"></span></div>
+        <form th:if="${user.active()}" th:action="@{/admin/staff/{id}/deactivate(id=${user.id()})}" method="post" onsubmit="return confirm('Deactivate this user?')" style="margin:0">
+            <button class="btn btn-secondary btn-md danger-text"><i class="icon-user-x" aria-hidden="true"></i>Deactivate account</button>
         </form>
-        <form th:unless="${user.active()}" th:action="@{/admin/staff/{id}/reactivate(id=${user.id()})}" method="post">
-            <button class="btn btn-ghost">Reactivate</button>
+        <form th:unless="${user.active()}" th:action="@{/admin/staff/{id}/reactivate(id=${user.id()})}" method="post" style="margin:0">
+            <button class="btn btn-secondary btn-md"><i class="icon-user-check" aria-hidden="true"></i>Reactivate</button>
         </form>
     </section>
-</main>
+</div>
+</div>
 </body>
 </html>
