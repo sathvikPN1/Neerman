@@ -1,36 +1,46 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head('Team')}"></head>
-<body>
-<div th:replace="~{fragments/layout :: nav}"></div>
-<main id="main" class="max-w-xl mx-auto px-4 py-6 space-y-4" th:with="errs=${errors ?: {:}}">
-    <div th:replace="~{fragments/flash :: flash}"></div>
-    <h1 class="text-2xl font-semibold" th:text="${form.id() == null ? 'New team' : 'Edit team'}"></h1>
-    <div th:if="${cohorts.isEmpty()}" class="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-amber-900">
-        Create a cohort first. <a th:href="@{/cohorts}" class="underline">Go to cohorts</a>
-    </div>
-    <form th:action="@{/teams}" method="post" class="card p-4 space-y-4">
+<!-- Screen 12 of the design handoff: new / edit team. Markup follows design.html, section "12 Team form". -->
+<head th:replace="~{fragments/shell :: head(${form.id() == null} ? 'New team' : 'Edit team')}"></head>
+<body th:replace="~{fragments/shell :: page('teams', ~{::#content})}">
+<div id="content" style="display:contents" th:with="errs=${errors ?: {:}}">
+<div class="page-form">
+
+    <div><a th:href="${form.id() == null} ? @{/teams} : @{/teams/{id}(id=${form.id()})}" class="back-link"><i class="icon-arrow-left" aria-hidden="true"></i>Teams</a>
+        <h1 class="page-title" style="margin-top:2px" th:text="${form.id() == null ? 'New team' : 'Edit team'}">New team</h1></div>
+
+    <div th:if="${cohorts.isEmpty()}" class="notice notice-warn"><i class="icon-triangle-alert" aria-hidden="true"></i>
+        <span>Create a cohort first. <a th:href="@{/cohorts}">Go to cohorts</a></span></div>
+
+    <form th:action="@{/teams}" method="post" style="display:flex;flex-direction:column;gap:16px;margin:0">
         <input type="hidden" name="id" th:value="${form.id()}">
-        <div><label class="label" for="name">Team name</label>
-            <input class="input" id="name" name="name" th:value="${form.name()}" required maxlength="120">
-            <p class="field-error" th:if="${errs['name']}" th:text="${errs['name']}"></p></div>
-        <div><label class="label" for="cohortId">Cohort</label>
-            <select class="input" id="cohortId" name="cohortId" required>
-                <option value="">Choose…</option>
-                <option th:each="c : ${cohorts}" th:value="${c.id()}" th:text="${c.name()}" th:selected="${form.cohortId() == c.id()}"></option>
-            </select>
-            <p class="field-error" th:if="${errs['cohortId']}" th:text="${errs['cohortId']}"></p></div>
-        <div><label class="label" for="program">Program</label>
-            <select class="input" id="program" name="program">
-                <option th:each="p : ${programs}" th:value="${p}" th:text="${p.label()}" th:selected="${form.program() == p}"></option>
-            </select>
-            <p class="hint">Changing Pratham → Akshar here updates the budget; the change is kept in the audit log.</p></div>
-        <div><label class="label" for="budgetAmount">Budget (₹)</label>
-            <input class="input" id="budgetAmount" name="budgetAmount" inputmode="decimal" th:value="${form.budgetAmount()}">
-            <p class="hint">Leave empty for the program default: Pratham <span th:text="${@fmt.inr(prathamDefault)}"></span>, Akshar <span th:text="${@fmt.inr(aksharDefault)}"></span>.</p>
-            <p class="field-error" th:if="${errs['budgetAmount']}" th:text="${errs['budgetAmount']}"></p></div>
-        <button class="btn btn-primary">Save team</button>
+        <div class="form-grid">
+            <div class="field"><label for="name">Team name</label>
+                <input class="input" id="name" name="name" th:value="${form.name()}" required maxlength="120" placeholder="AgriSense">
+                <p class="field-error" th:if="${errs['name']}" th:text="${errs['name']}"></p></div>
+            <div class="field"><label for="cohortId">Cohort</label>
+                <select class="input" id="cohortId" name="cohortId" required>
+                    <option value="">Choose…</option>
+                    <option th:each="c : ${cohorts}" th:value="${c.id()}" th:text="${c.name()}" th:selected="${form.cohortId() == c.id()}"></option>
+                </select>
+                <p class="field-error" th:if="${errs['cohortId']}" th:text="${errs['cohortId']}"></p></div>
+            <div class="field"><label for="program">Program</label>
+                <select class="input" id="program" name="program">
+                    <option th:each="p : ${programs}" th:value="${p}" th:text="${p.label()}" th:selected="${form.program() == p}"></option>
+                </select>
+                <p class="hint">Changing Pratham → Akshar updates the budget. The change is kept in the audit log.</p></div>
+            <div class="field"><label for="budgetAmount">Budget (₹)</label>
+                <input class="input mono" id="budgetAmount" name="budgetAmount" inputmode="decimal" th:value="${form.budgetAmount()}">
+                <p class="hint" th:text="'Leave empty for the program default: Pratham ' + ${@fmt.inrWhole(prathamDefault)} + ', Akshar ' + ${@fmt.inrWhole(aksharDefault)} + '.'"></p>
+                <p class="field-error" th:if="${errs['budgetAmount']}" th:text="${errs['budgetAmount']}"></p></div>
+        </div>
+        <p th:if="${form.id() == null}" class="muted-sm" style="margin:0">Add members from the team page once it is created. They get an invite to set a password.</p>
+        <div class="actions">
+            <button class="btn btn-primary btn-lg" style="flex:1 1 200px" th:text="${form.id() == null} ? 'Create team' : 'Save team'">Create team</button>
+            <a th:href="${form.id() == null} ? @{/teams} : @{/teams/{id}(id=${form.id()})}" class="btn btn-secondary btn-lg" style="flex:0 1 140px">Cancel</a>
+        </div>
     </form>
-</main>
+</div>
+</div>
 </body>
 </html>
