@@ -58,6 +58,9 @@ management:
 
 app:
   base-url: ${APP_BASE_URL:http://localhost:8080}
+  mcp:
+    # Optional folder the AI connector can attach files from (<dir>/<member email>/<file>). Empty = off.
+    inbox-dir: ${MCP_INBOX_DIR:}
   zone: Asia/Kolkata
   mail:
     # log = write emails to the application log, smtp = send via spring.mail (MailHog in docker)

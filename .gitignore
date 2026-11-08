@@ -8,3 +8,4 @@ data/
 
 # Design handoff archive (source files live in src/main/resources/static/design)
 /nirmaan-design-handoff.zip
+inbox/
