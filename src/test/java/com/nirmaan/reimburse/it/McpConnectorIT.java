@@ -86,6 +86,9 @@ class McpConnectorIT extends IntegrationTest {
                 .contains("get_my_team", "create_draft_claim", "upload_document", "get_upload_link")
                 .noneMatch(n -> n.contains("submit") || n.contains("approve") || n.contains("pay"));
 
+        // the inbox tool is off unless app.mcp.inbox-dir is set (see McpInboxIT)
+        assertThat(list.at("/result/tools").findValuesAsText("name")).doesNotContain("attach_inbox_file");
+
         JsonNode teamInfo = call(t.access(), "get_my_team", Map.of());
         assertThat(teamInfo.at("/structuredContent/team").asText()).isEqualTo(team.getName());
         assertThat(teamInfo.at("/structuredContent/budget/remaining").asText()).isEqualTo("₹2,00,000.00");

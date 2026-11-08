@@ -83,6 +83,76 @@ class McpInboxIT extends IntegrationTest {
     }
 
     @Test
+    void rejectsPathsAndHiddenNames() throws IOException {
+        Files.write(INBOX.resolve("secret.png"), png());
+        Files.write(folder.resolve("b.png"), png());
+        for (String bad : new String[]{"../secret.png", "a/b.png", "..\\secret.png", ".hidden.png", "..", "/etc/passwd"}) {
+            JsonNode r = attach(member, code, bad);
+            assertThat(r.get("isError").asBoolean()).as(bad).isTrue();
+            assertThat(r.at("/content/0/text").asText()).as(bad).contains("plain file name");
+        }
+    }
+
+    @Test
+    void rejectsASymlinkedFile() throws IOException {
+        Path outside = Files.createTempFile("outside", ".png");
+        Files.write(outside, png());
+        Files.createSymbolicLink(folder.resolve("link.png"), outside);
+        JsonNode r = attach(member, code, "link.png");
+        assertThat(r.get("isError").asBoolean()).isTrue();
+        assertThat(r.at("/content/0/text").asText()).contains("No file named link.png");
+    }
+
+    @Test
+    void rejectsASymlinkedMemberFolder() throws IOException {
+        User other = fx.member(fx.team());
+        Path real = Files.createTempDirectory("elsewhere");
+        Files.write(real.resolve("x.png"), png());
+        Path link = INBOX.resolve(other.getEmail().toLowerCase(Locale.ROOT));
+        Files.createSymbolicLink(link, real);
+        Long otherClaim = fx.as(other, () -> claimService.createDraft(fx.claimForm("500")));
+        JsonNode r = attach(other, fx.claim(otherClaim).getPublicCode(), "x.png");
+        assertThat(r.get("isError").asBoolean()).isTrue();
+    }
+
+    @Test
+    void cannotAttachAnotherMembersFile() throws IOException {
+        User other = fx.member(fx.team());
+        Path theirs = INBOX.resolve(other.getEmail().toLowerCase(Locale.ROOT));
+        Files.createDirectories(theirs);
+        Files.write(theirs.resolve("theirs.png"), png());
+        JsonNode r = attach(member, code, "theirs.png");
+        assertThat(r.get("isError").asBoolean()).isTrue();
+        assertThat(r.at("/content/0/text").asText()).contains("No file named theirs.png").doesNotContain("theirs.png,");
+    }
+
+    @Test
+    void cannotAttachToAnotherTeamsClaim() throws IOException {
+        User other = fx.member(fx.team());
+        Long theirClaim = fx.as(other, () -> claimService.createDraft(fx.claimForm("500")));
+        Files.write(folder.resolve("invoice.png"), png());
+        JsonNode r = attach(member, fx.claim(theirClaim).getPublicCode(), "invoice.png");
+        assertThat(r.get("isError").asBoolean()).isTrue();
+    }
+
+    @Test
+    void rejectsANonDraftClaim() throws IOException {
+        Long submitted = fx.submitted(member, "700");
+        Files.write(folder.resolve("late.png"), png());
+        JsonNode r = attach(member, fx.claim(submitted).getPublicCode(), "late.png");
+        assertThat(r.get("isError").asBoolean()).isTrue();
+        assertThat(r.at("/content/0/text").asText()).contains("draft or returned");
+        assertThat(fx.claim(submitted).getStatus()).isNotEqualTo(ClaimStatus.DRAFT);
+    }
+
+    @Test
+    void missingFileListsWhatIsThere() throws IOException {
+        Files.write(folder.resolve("one.png"), png());
+        JsonNode r = attach(member, code, "nope.png");
+        assertThat(r.at("/content/0/text").asText()).contains("nope.png").contains("one.png");
+    }
+
+    @Test
     void toolIsListedWhenTheInboxIsConfigured() {
         assertThat(tools.definitions()).extracting(McpTools.ToolDef::name).contains("attach_inbox_file");
     }
