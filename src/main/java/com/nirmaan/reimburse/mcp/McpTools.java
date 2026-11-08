@@ -28,10 +28,12 @@ import com.nirmaan.reimburse.team.TeamDetail;
 import com.nirmaan.reimburse.team.TeamService;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -78,11 +80,14 @@ public class McpTools {
     private final OAuthService oauth;
     private final Validator validator;
     private final ObjectMapper json;
+    /** Optional folder the assistant can attach files from (local demo setups); null when not configured. */
+    private final Path inboxDir;
     private final Map<String, Tool> tools = new LinkedHashMap<>();
 
     public McpTools(ClaimService claims, ClaimRepository claimRepository, DocumentService documents,
                     CommentService comments, CategoryService categories, TeamService teams, OAuthService oauth,
-                    Validator validator, ObjectMapper json) {
+                    Validator validator, ObjectMapper json,
+                    @Value("${app.mcp.inbox-dir:}") String inboxDir) {
         this.claims = claims;
         this.claimRepository = claimRepository;
         this.documents = documents;
@@ -92,6 +97,7 @@ public class McpTools {
         this.oauth = oauth;
         this.validator = validator;
         this.json = json.copy().disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        this.inboxDir = inboxDir == null || inboxDir.isBlank() ? null : Path.of(inboxDir).toAbsolutePath().normalize();
         register();
     }
 
