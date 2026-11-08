@@ -1,44 +1,36 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head th:replace="~{fragments/layout :: head('Approvals')}"></head>
-<body>
-<div th:replace="~{fragments/layout :: nav}"></div>
-<main id="main" class="max-w-3xl mx-auto px-2 sm:px-4 py-4 space-y-4">
-    <div class="px-2" th:replace="~{fragments/flash :: flash}"></div>
-    <div class="px-2 flex items-end justify-between gap-2">
-        <div>
-            <h1 class="text-2xl font-semibold">Approvals</h1>
-            <p class="text-sm text-slate-600"><span th:text="${count}">0</span> waiting · <span th:text="${@fmt.inr(total)}"></span></p>
-        </div>
-        <a sec:authorize="hasAnyAuthority('CLAIM_VERIFY','CLAIM_RETURN_REJECT')" th:href="@{/staff/queue}" class="text-sm text-brand-700 underline">Full staff queue →</a>
+<!-- Screen 08 of the design handoff: COO approvals, phone first. Tap a card to expand it. Markup follows design.html, section "08 COO Approvals". -->
+<head th:replace="~{fragments/shell :: head('Approvals')}"></head>
+<body th:replace="~{fragments/shell :: page('approvals', ~{::#content})}">
+<div id="content" style="display:contents">
+
+    <div class="page-head">
+        <div><h1 class="page-title">Approvals</h1>
+            <span style="font-size:15px"><th:block th:text="${count} + ' waiting · '">3 waiting · </th:block><b class="mono" style="font-weight:500" th:text="${@fmt.inr(total)}">₹95,949.00</b></span></div>
+        <a sec:authorize="hasAnyAuthority('CLAIM_VERIFY','CLAIM_RETURN_REJECT')" th:href="@{/staff/queue}" style="font-size:14px">Full staff queue →</a>
     </div>
 
-    <div th:if="${count == 0}" class="card p-10 text-center text-slate-600">
-        <p class="font-medium">All caught up. 🎉</p>
-        <p class="text-sm">Verified claims will appear here, priority first.</p>
-    </div>
+    <div th:if="${count == 0}" class="list"><div class="empty"><i class="icon-circle-check" style="font-size:28px;color:var(--color-accent)" aria-hidden="true"></i>
+        <b>All caught up.</b><span class="muted-sm">Verified claims appear here, priority first.</span></div></div>
 
     <form id="bulk-form" th:action="@{/coo/approvals/bulk}" method="post" th:if="${count > 0}"
-          class="sticky top-[6.5rem] z-10 card px-3 py-2 flex items-center justify-between gap-2 shadow-sm"
+          style="position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;background:#fff;border:1px solid var(--color-divider);box-shadow:var(--shadow-md)"
           onsubmit="return confirm('Approve all selected claims in full?')">
-        <label class="flex items-center gap-2 text-sm"><input type="checkbox" class="h-5 w-5" data-select-all="selected"> Select all</label>
-        <button class="btn btn-success">Approve selected</button>
+        <label class="check" style="align-items:center"><input type="checkbox" data-select-all="selected"> Select all</label>
+        <button class="btn btn-primary" style="min-height:40px"><i class="icon-check" aria-hidden="true"></i>Approve selected</button>
     </form>
 
-    <section th:unless="${priorityRows.isEmpty()}" aria-labelledby="prio-title">
-        <h2 id="prio-title" class="px-2 mb-1 text-sm font-semibold text-rose-700 uppercase tracking-wide">Priority</h2>
-        <ul class="card divide-y divide-slate-200 overflow-hidden border-rose-200">
-            <th:block th:each="a : ${priorityRows}"><li th:replace="~{coo/fragments :: row(${a})}"></li></th:block>
-        </ul>
+    <section th:unless="${priorityRows.isEmpty()}" aria-labelledby="prio-title" style="display:flex;flex-direction:column;gap:10px">
+        <span id="prio-title" class="card-kicker" style="color:#B42318">Priority</span>
+        <th:block th:each="a : ${priorityRows}"><div th:replace="~{coo/fragments :: row(${a})}"></div></th:block>
     </section>
 
-    <section th:unless="${otherRows.isEmpty()}" aria-labelledby="other-title">
-        <h2 id="other-title" class="px-2 mb-1 text-sm font-semibold text-slate-600 uppercase tracking-wide">Everything else</h2>
-        <ul class="card divide-y divide-slate-200 overflow-hidden">
-            <th:block th:each="a : ${otherRows}"><li th:replace="~{coo/fragments :: row(${a})}"></li></th:block>
-        </ul>
+    <section th:unless="${otherRows.isEmpty()}" aria-labelledby="other-title" style="display:flex;flex-direction:column;gap:10px">
+        <span id="other-title" class="card-kicker">Everything else</span>
+        <th:block th:each="a : ${otherRows}"><div th:replace="~{coo/fragments :: row(${a})}"></div></th:block>
     </section>
-    <p class="px-2 text-xs text-slate-500" th:if="${count > 0}">Rows you verified yourself or that exceed the team budget can't be bulk-approved; open them to decide.</p>
-</main>
+    <p th:if="${count > 0}" class="muted-sm" style="margin:0">Claims you verified yourself, or that go over the team budget, can't be bulk-approved. Open them to decide.</p>
+</div>
 </body>
 </html>
