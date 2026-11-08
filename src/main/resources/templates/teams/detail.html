@@ -1,68 +1,85 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head th:replace="~{fragments/layout :: head(${team.summary().name()})}"></head>
-<body>
-<div th:replace="~{fragments/layout :: nav}"></div>
-<main id="main" class="max-w-6xl mx-auto px-4 py-6 space-y-6" th:with="t=${team.summary()}">
-    <div th:replace="~{fragments/flash :: flash}"></div>
-    <div class="flex flex-wrap items-center justify-between gap-3">
-        <div>
-            <h1 class="text-2xl font-semibold"><span th:text="${t.name()}"></span>
-                <th:block th:if="${t.priority()}"><span th:replace="~{fragments/layout :: priority}"></span></th:block></h1>
-            <p class="text-sm text-slate-600" th:text="${t.program().label()} + ' · ' + ${t.cohortName()}"></p>
-            <p th:if="${t.priority()}" class="text-sm text-rose-800" th:text="'Priority: ' + ${t.priorityReason()}"></p>
-        </div>
-        <a sec:authorize="hasAuthority('TEAM_MANAGE')" th:href="@{/teams/{id}/edit(id=${t.id()})}" class="btn btn-ghost">Edit team &amp; budget</a>
+<!-- Screen 11 of the design handoff: one team, its members and claims. Markup follows design.html, section "11 Team detail". -->
+<head th:replace="~{fragments/shell :: head(${team.summary().name()})}"></head>
+<body th:replace="~{fragments/shell :: page('teams', ~{::#content})}">
+<div id="content" style="display:contents" th:with="t=${team.summary()}, b=${team.summary().budget()}">
+
+    <div class="page-head">
+        <div><a th:href="@{/teams}" class="back-link"><i class="icon-arrow-left" aria-hidden="true"></i>Teams</a>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:2px"><h1 class="page-title" th:text="${t.name()}">MedTrack</h1>
+                <th:block th:if="${t.priority()}"><span th:replace="~{fragments/shell :: priority}"></span></th:block></div>
+            <span class="text-muted" th:text="${t.program().label()} + ' · ' + ${t.cohortName()}">Pratham · Cohort 2026-A</span>
+            <p th:if="${t.priority()}" class="danger-text" style="margin:2px 0 0;font-size:14px" th:text="'Priority: ' + ${t.priorityReason()}"></p></div>
+        <a sec:authorize="hasAuthority('TEAM_MANAGE')" th:href="@{/teams/{id}/edit(id=${t.id()})}" class="btn btn-secondary btn-md"><i class="icon-pencil" aria-hidden="true"></i>Edit team &amp; budget</a>
     </div>
 
-    <div th:replace="~{fragments/budget :: meter(${t.budget()}, 'Budget')}"></div>
+    <div class="facts" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">
+        <div><span class="label">Budget</span><span class="big" th:text="${@fmt.inrWhole(b.total())}">₹1,00,000</span></div>
+        <div><span class="label">Paid or approved</span><span class="big" th:text="${@fmt.inrWhole(b.committed())} + ' · ' + ${b.paidPercent() + b.approvedPercent()} + '%'">₹62,450 · 62%</span></div>
+        <div><span class="label">In review</span><span class="big" th:text="${@fmt.inrWhole(b.pending())}">₹10,320</span></div>
+        <div><span class="label">Left</span><span class="big" th:classappend="${b.remaining().signum() < 0} ? 'danger-text'" th:text="${@fmt.inrWhole(b.remaining())}">₹37,550</span></div>
+    </div>
 
-    <div class="grid lg:grid-cols-2 gap-6">
-        <section class="card p-4 space-y-3" aria-labelledby="members-title">
-            <h2 id="members-title" class="font-semibold">Members</h2>
-            <p th:if="${team.members().isEmpty()}" class="text-sm text-slate-500">No members yet.</p>
-            <ul class="divide-y text-sm">
-                <li th:each="m : ${team.members()}" class="py-2 flex items-center justify-between gap-2">
-                    <div><p class="font-medium" th:text="${m.name()}"></p><p class="text-xs text-slate-500" th:text="${m.email()}"></p>
-                        <span th:if="${m.invitePending()}" class="chip bg-sky-100 text-sky-800">Invite pending</span>
-                        <span th:unless="${m.active()}" class="chip bg-slate-200">Deactivated</span></div>
-                    <form sec:authorize="hasAuthority('TEAM_MANAGE')" th:if="${m.active()}" th:action="@{/teams/{t}/members/{u}/remove(t=${t.id()},u=${m.userId()})}" method="post"
+    <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start">
+        <div style="flex:1 1 300px;display:flex;flex-direction:column;gap:8px;min-width:0">
+            <span class="section-title">Members</span>
+            <div class="list">
+                <div th:if="${team.members().isEmpty()}" class="list-row muted-sm">No members yet.</div>
+                <div th:each="m : ${team.members()}" style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--color-neutral-200)">
+                    <span class="avatar avatar-light" th:text="${@fmt.initials(m.name())}" aria-hidden="true">AI</span>
+                    <div style="flex:1;display:flex;flex-direction:column;font-size:14px;min-width:0"><b th:text="${m.name()}">Ananya Iyer</b>
+                        <span class="text-muted" style="font-size:12px;overflow:hidden;text-overflow:ellipsis" th:text="${m.email()}">ananya@medtrack.in</span></div>
+                    <span th:if="${m.invitePending()}" class="tag tag-warn">Invite sent</span>
+                    <span th:unless="${m.active()}" class="tag tag-muted">Deactivated</span>
+                    <span th:if="${m.active() and !m.invitePending()}" class="tag tag-accent">Active</span>
+                    <form sec:authorize="hasAuthority('TEAM_MANAGE')" th:if="${m.active()}" th:action="@{/teams/{t}/members/{u}/remove(t=${t.id()},u=${m.userId()})}" method="post" style="margin:0"
                           onsubmit="return confirm('Remove this member and deactivate their account?')">
-                        <button class="text-xs text-rose-700 underline">Remove</button>
+                        <button class="btn btn-ghost btn-icon" title="Remove member" th:attr="aria-label='Remove ' + ${m.name()}"><i class="icon-user-x" aria-hidden="true"></i></button>
                     </form>
-                </li>
-            </ul>
-            <form sec:authorize="hasAuthority('TEAM_MANAGE')" th:action="@{/teams/{id}/members(id=${t.id()})}" method="post" class="grid sm:grid-cols-3 gap-2 items-end border-t pt-3">
-                <div><label class="label" for="mname">Name</label><input class="input" id="mname" name="name" required></div>
-                <div><label class="label" for="memail">Email</label><input class="input" id="memail" name="email" type="email" required></div>
-                <button class="btn btn-primary">Add &amp; invite</button>
+                </div>
+            </div>
+            <form sec:authorize="hasAuthority('TEAM_MANAGE')" th:action="@{/teams/{id}/members(id=${t.id()})}" method="post" class="panel">
+                <span class="card-kicker">Invite member</span>
+                <div class="form-grid-sm">
+                    <div class="field"><label for="mname">Name</label><input class="input" id="mname" name="name" required></div>
+                    <div class="field"><label for="memail">Email</label><input class="input" id="memail" name="email" type="email" required></div>
+                    <button class="btn btn-primary btn-md"><i class="icon-user-plus" aria-hidden="true"></i>Invite</button>
+                </div>
             </form>
-        </section>
+        </div>
 
-        <section sec:authorize="hasAuthority('CLAIM_FLAG_PRIORITY')" class="card p-4 space-y-3" aria-labelledby="tprio-title">
-            <h2 id="tprio-title" class="font-semibold">Team priority</h2>
-            <p class="text-sm text-slate-600">All of this team's claims go to the top of every queue with a shorter target time.</p>
-            <form th:unless="${t.priority()}" th:action="@{/teams/{id}/priority(id=${t.id()})}" method="post" class="flex flex-wrap gap-2 items-end">
-                <input type="hidden" name="priority" value="true">
-                <div class="grow"><label class="label" for="treason">Reason</label><input class="input" id="treason" name="reason" required></div>
-                <button class="btn btn-danger">Mark team as priority</button>
-            </form>
-            <form th:if="${t.priority()}" th:action="@{/teams/{id}/priority(id=${t.id()})}" method="post">
-                <input type="hidden" name="priority" value="false"><button class="btn btn-ghost">Remove team priority</button>
-            </form>
-        </section>
+        <div style="flex:1.4 1 320px;display:flex;flex-direction:column;gap:20px;min-width:0">
+            <div style="display:flex;flex-direction:column;gap:8px">
+                <span class="section-title">Claims</span>
+                <div class="list">
+                    <div th:if="${claims.isEmpty()}" class="list-row muted-sm">No claims yet.</div>
+                    <a th:each="c : ${claims}" th:href="@{/claims/{id}(id=${c.id()})}" class="row-link"
+                       style="display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--color-neutral-200)">
+                        <div style="flex:1 1 180px;display:flex;flex-direction:column;min-width:0"><span class="code" th:text="${c.publicCode()}">NRM-2026-00042</span>
+                            <span style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" th:text="${c.vendorName()} + ' · ' + ${c.categoryName()}">Robu.in · Components</span></div>
+                        <th:block th:if="${c.priority()}"><span th:replace="~{fragments/shell :: priority}"></span></th:block>
+                        <span th:replace="~{fragments/shell :: status(${c.status()})}"></span>
+                        <span class="mono" style="font-size:14px;min-width:96px;text-align:right" th:text="${@fmt.inr(c.claimedAmount())}">₹18,450.00</span>
+                    </a>
+                </div>
+            </div>
+
+            <section sec:authorize="hasAuthority('CLAIM_FLAG_PRIORITY')" class="panel" aria-labelledby="tprio-title">
+                <span class="card-kicker">Priority</span>
+                <span id="tprio-title" style="font:600 18px var(--font-heading)">Team priority</span>
+                <span class="muted-sm">All of this team's claims go to the top of every queue with a shorter target time.</span>
+                <form th:unless="${t.priority()}" th:action="@{/teams/{id}/priority(id=${t.id()})}" method="post" style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin:0">
+                    <input type="hidden" name="priority" value="true">
+                    <div class="field" style="flex:1 1 200px"><label for="treason">Reason</label><input class="input" id="treason" name="reason" required></div>
+                    <button class="btn btn-secondary btn-md danger-text"><i class="icon-flag" aria-hidden="true"></i>Mark team as priority</button>
+                </form>
+                <form th:if="${t.priority()}" th:action="@{/teams/{id}/priority(id=${t.id()})}" method="post" style="margin:0">
+                    <input type="hidden" name="priority" value="false"><button class="btn btn-secondary btn-md"><i class="icon-x" aria-hidden="true"></i>Remove team priority</button>
+                </form>
+            </section>
+        </div>
     </div>
-
-    <section class="card" aria-labelledby="claims-title">
-        <h2 id="claims-title" class="px-4 pt-4 font-semibold">Claims</h2>
-        <p th:if="${claims.isEmpty()}" class="p-4 text-sm text-slate-500">No claims yet.</p>
-        <ul class="divide-y mt-2">
-            <li th:each="c : ${claims}"><a th:href="@{/claims/{id}(id=${c.id()})}" class="flex justify-between gap-3 px-4 py-3 hover:bg-slate-50">
-                <span><span class="font-medium" th:text="${c.publicCode()}"></span> <span class="text-sm text-slate-500" th:text="'· ' + ${c.vendorName()} + ' · ' + ${c.categoryName()}"></span></span>
-                <span class="text-right"><span class="font-semibold" th:text="${@fmt.inr(c.claimedAmount())}"></span> <span th:replace="~{fragments/layout :: status(${c.status()})}"></span></span>
-            </a></li>
-        </ul>
-    </section>
-</main>
+</div>
 </body>
 </html>
