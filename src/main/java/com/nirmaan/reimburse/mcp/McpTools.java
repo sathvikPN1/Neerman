@@ -32,7 +32,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
@@ -323,6 +326,46 @@ public class McpTools {
             throw new ToolError("content_base64 is not valid base64.");
         }
         return uploaded(id, documents.upload(id, type, required(a, "filename"), bytes));
+    }
+
+    /** Reads a file from {@code <inbox>/<member email>/} and attaches it, with the same checks as a browser upload. */
+    private Map<String, Object> attachInboxFile(JsonNode a) {
+        Long id = resolve(a);
+        DocumentType type = documentType(a);
+        String name = required(a, "filename").trim();
+        if (name.isEmpty() || name.startsWith(".") || name.contains("/") || name.contains("\\") || name.contains("..")) {
+            throw new ToolError("Pass only a plain file name from your inbox folder, e.g. invoice.png.");
+        }
+        Path dir = inboxDir.resolve(CurrentUser.require().email().toLowerCase(Locale.ROOT)).normalize();
+        Path file = dir.resolve(name).normalize();
+        // the member's folder must be a real directory directly under the inbox (not a symlink to somewhere else)
+        boolean safeDir = inboxDir.equals(dir.getParent()) && Files.isDirectory(dir, LinkOption.NOFOLLOW_LINKS);
+        if (!safeDir || !file.startsWith(dir) || !Files.isRegularFile(file, LinkOption.NOFOLLOW_LINKS)) {
+            throw new ToolError("No file named " + name + " in your inbox folder. Files there: " + inboxListing(dir));
+        }
+        byte[] bytes;
+        try {
+            if (Files.size(file) > MAX_UPLOAD_BYTES) {
+                throw new ToolError("Files must be 10 MB or smaller.");
+            }
+            bytes = Files.readAllBytes(file);
+        } catch (IOException e) {
+            throw new ToolError("Could not read " + name + " from the inbox folder.");
+        }
+        return uploaded(id, documents.upload(id, type, name, bytes));
+    }
+
+    private String inboxListing(Path dir) {
+        if (!Files.isDirectory(dir, LinkOption.NOFOLLOW_LINKS)) {
+            return "(none; the folder does not exist yet)";
+        }
+        try (var files = Files.list(dir)) {
+            List<String> names = files.filter(f -> Files.isRegularFile(f, LinkOption.NOFOLLOW_LINKS))
+                    .map(f -> f.getFileName().toString()).filter(n -> !n.startsWith(".")).sorted().limit(20).toList();
+            return names.isEmpty() ? "(none)" : String.join(", ", names);
+        } catch (IOException e) {
+            return "(could not list)";
+        }
     }
 
     private Map<String, Object> uploaded(Long id, DocumentView doc) {
