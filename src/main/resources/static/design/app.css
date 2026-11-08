@@ -171,3 +171,11 @@ details.expand[open] > summary .chev-down, details.expand:not([open]) > summary 
 .doc-preview { height: 140px; background: repeating-linear-gradient(135deg, var(--color-neutral-100) 0 8px, var(--color-neutral-200) 8px 16px); display: grid; place-items: center; overflow: hidden; }
 .doc-preview iframe, .doc-preview img { width: 100%; height: 100%; border: 0; object-fit: cover; background: #fff; }
 .doc-preview span { font: 400 11px 'JetBrains Mono', monospace; color: var(--color-neutral-700); }
+
+/* Narrower column inside .page for forms and single-column screens (design widths 680/760px). */
+.page > .page-form, .page > .page-narrow { width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+
+/* Budget meter legend (team detail, claim detail side panel) */
+.legend { display: flex; gap: 6px 16px; flex-wrap: wrap; font-size: 13px; color: var(--color-neutral-800); }
+.legend > span { display: flex; gap: 6px; align-items: center; }
+.swatch { width: 10px; height: 10px; flex: none; }
