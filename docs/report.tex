@@ -1,0 +1,183 @@
+\documentclass[11pt,a4paper]{article}
+
+% -------------------- PACKAGES --------------------
+\usepackage[margin=0.7in,top=0.6in,bottom=0.7in]{geometry}
+\usepackage{setspace}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{parskip}
+\usepackage{xcolor}
+\usepackage{calc}
+\usepackage[compact]{titlesec}
+
+% -------------------- FORMATTING --------------------
+\setlength{\parskip}{0.3em}
+\setlength{\parindent}{0pt}
+
+\titlespacing*{\section}{0pt}{1.0ex plus .2ex minus .1ex}{0.4ex plus .1ex}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    urlcolor=blue
+}
+
+% Red marker for facts only the team can supply. Search for TODO before submitting.
+\newcommand{\todo}[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
+
+% -------------------- TITLE --------------------
+\title{
+    CS5013 Final Project Report\\
+    \large\textit{Neerman -- Nirmaan Reimbursement Platform}
+}
+
+\author{Sathvik P Narayan, ID26S414 \and Aishworya Shrivastav, GE26Z840}
+\date{}
+
+% ==================================================
+\begin{document}
+
+\maketitle
+\vspace{-2.0em}
+
+% -------------------- SUBMISSION DETAILS --------------------
+\begin{description}[
+    leftmargin=!,
+    labelwidth=\widthof{\textbf{Submission commit:}},
+    nosep,
+    font=\bfseries
+]
+    \item[Team Name:] DuoBytes
+    \item[Repository:] \url{https://github.com/sathvikPN1/Neerman}
+    \item[Submission commit:] \texttt{\todo{40-char SHA of final commit}} (date: \texttt{\todo{YYYY-MM-DD}}).
+    \item[Docker image:] \url{https://drive.google.com/\todo{share-link}} (view access to course staff).
+    \item[Tagline:] \textit{A web app that takes student-team expense claims from submission through staff verification and COO approval to a recorded payment, with an audit log of every step.}
+\end{description}
+
+% -------------------- AI AUTHORSHIP --------------------
+\textbf{AI-authorship clause.}
+\textit{
+We used AI tools to help draft parts of this report. The claims,
+numbers, commit references, stakeholder statements, and the Docker
+image are our own; the prose shaping may have been assisted. We can
+defend every sentence of this report, and every line of code in the
+submission commit, in the viva.
+}
+
+% -------------------- 1. EXECUTIVE SUMMARY --------------------
+\section{Executive summary}
+
+Nirmaan, the pre-incubator at IIT Madras, reimburses its startup teams' expenses over email: invoices, payment proofs, approvals and payment records are scattered across threads, and nobody can see where a claim is stuck or how much of a team's budget is left.
+
+We shipped a Spring Boot web app (Neerman) that replaces this. A team member creates a claim, uploads the invoice and payment proof, and submits it; Nirmaan staff verify it, the COO approves it (in full or in part) from a mobile-first screen, and Finance records the payment date, mode and UTR. Every transition is audit-logged, budgets are enforced, and users get in-app and email notifications. Team members can also connect ChatGPT or Claude (via an MCP connector) to have a receipt turned into a \emph{draft} claim; the student still presses Submit. Scope grew after the proposal by this AI connector and duplicate-invoice protection; Phase 2/3 items (bank details, batch payouts, pre-approvals, SLA reminders) were deferred.
+
+Stakeholder verdict: \todo{accepted / partially accepted / not accepted, with the date of the final demo}.
+
+% -------------------- 2. COURSE CONCEPTS --------------------
+\section{Course concepts used in the project}
+
+\begin{itemize}[leftmargin=*,nosep]
+    \item \textbf{Module [X] -- Prompt engineering with phased checkpoints.}
+    A full specification prompt (stakeholder, roles, rules, stack constraints, acceptance tests) drove Phase~1.
+    File: \texttt{docs/prompts/01-phase1-master-prompt.md}.
+    Commit: \texttt{6fd74cf}.
+
+    \item \textbf{Module [X] -- Explicit state machine for workflow.}
+    Legal claim transitions, the four-eyes rule and optimistic locking live in one class, tested per transition.
+    File: \texttt{src/main/java/.../claim/ClaimStateMachine.java}, \texttt{ClaimStateMachineTest.java}.
+    Commit: \texttt{5fffee1}.
+
+    \item \textbf{Module [X] -- Concurrency control.}
+    A pessimistic row lock (\texttt{SELECT \ldots FOR UPDATE}) on the team serialises approvals so two cannot overspend one budget; \texttt{@Version} guards claims.
+    File: \texttt{.../team/TeamRepository.java}, \texttt{.../claim/Claim.java}.
+    Commit: \texttt{3211593}.
+
+    \item \textbf{Module [X] -- Authentication, authorisation and least privilege.}
+    Form login, fine-grained expiring permissions rebuilt on every request, login rate limiting and team-scoped data access.
+    File: \texttt{.../config/SecurityConfig.java}, \texttt{AuthorityRefreshFilter.java}, \texttt{LoginAttemptService.java}.
+    Commits: \texttt{cfed3a6}, \texttt{5069608}.
+
+    \item \textbf{Module [X] -- Database design and migrations.}
+    Flyway-versioned schema with constraints and unique indexes (e.g.\ one team per student), commented tables, and a schema README.
+    File: \texttt{src/main/resources/db/migration/V1__init.sql}, \texttt{V5\_\_schema\_comments.sql}, \texttt{docs/database/README.md}.
+    Commits: \texttt{6d199d8}, \texttt{f1bd54f}.
+
+    \item \textbf{Module [X] -- Testing (unit, integration, black/white box, security).}
+    JUnit unit tests, Testcontainers/PostgreSQL integration tests (access control, permission matrix, happy path, MCP) and a written test strategy with traceability matrix.
+    File: \texttt{src/test/java/\ldots/*IT.java}, \texttt{tests/01-test-strategy.md}, \texttt{tests/07-traceability-matrix.md}.
+    Commits: \texttt{a221183}, \texttt{217fff4}.
+
+    \item \textbf{Module [X] -- Tool use / Model Context Protocol and OAuth.}
+    An MCP server exposes ten tools to AI assistants, secured by OAuth 2.0 with PKCE and dynamic client registration; tools run as the signed-in student through the normal services.
+    File: \texttt{.../mcp/McpTools.java}, \texttt{OAuthService.java}, \texttt{docs/mcp-connector.md}.
+    Commit: \texttt{a3f2cec}.
+
+    \item \textbf{Module [X] -- Defensive handling of untrusted input.}
+    Magic-byte file type detection, size limits, duplicate-invoice and duplicate-file refusal backed by a unique index.
+    File: \texttt{.../document/FileTypeDetector.java}, \texttt{.../claim/DuplicateClaimGuard.java}.
+    Commit: \texttt{39735e3}.
+
+    \item \textbf{Module [X] -- Containerised deployment.}
+    Multi-stage Dockerfile (non-root user) and Compose stack with PostgreSQL, MinIO (S3 documents) and MailHog.
+    File: \texttt{Dockerfile}, \texttt{docker-compose.yml}.
+    Commit: \texttt{6d199d8}.
+\end{itemize}
+
+% -------------------- 3. AI USAGE --------------------
+\section{AI-usage summary}
+
+\textbf{Tools used.}
+Claude Code did the large majority of code generation (\todo{approx.\ \% per tool, e.g.\ Claude Code ~\%, ChatGPT ~\%}); ChatGPT/Claude chat were used for design briefs and mockups. The prompts are versioned in \texttt{docs/prompts/}.
+
+\textbf{One substantive help.}
+Given the Phase~1 master prompt, Claude Code generated the claim workflow (\texttt{ClaimStateMachine}, services, queues, bulk approval) together with its state-transition tests, which we kept near as-is (commits \texttt{5fffee1}, \texttt{3211593}).
+
+\textbf{One substantive failure caught in review.}
+\todo{Describe a real case you caught, e.g.\ a hallucinated API, wrong import, silent behaviour change or spec drift, and name the Lecture 8/9 term for it. One known candidate from the repo: \texttt{pom.xml} was changed to Java~25 while the brief required Java~21 (\texttt{ASSUMPTIONS.md}, item~1) -- only use it if that is what happened.}
+
+\textbf{Net-effect sentence.}
+\todo{One honest sentence, quantified if possible, e.g.\ ``AI assistance net-helped: Phase~1 (about N files) was built in about 8 days instead of the weeks we estimated.''}
+
+% -------------------- 4. DEPLOYMENT --------------------
+\section{Deployment and stakeholder handoff}
+
+\textbf{Build and run.}
+
+\begin{verbatim}
+git clone https://github.com/sathvikPN1/Neerman && cd Neerman
+docker compose up --build
+# App: http://localhost:8080   Mail: http://localhost:8025
+# Demo login: coo@nirmaan.local / Demo@1234 (other roles in README.md)
+\end{verbatim}
+
+\textbf{Where the artefact lives after the course.}
+\todo{Stakeholder's laptop / Nirmaan server / their GitHub / nowhere -- say honestly. Currently it exists only as the GitHub repository and the Docker image.}
+
+\textbf{Stakeholder quote (one sentence, verbatim).}
+
+\begin{quote}
+\textit{
+``\todo{paste the stakeholder's own words from the final demo email}''\\
+-- \todo{Name, role}, \todo{date}.
+}
+\end{quote}
+
+% -------------------- 5. LIMITATIONS --------------------
+\section{Known limitations}
+
+\begin{itemize}[leftmargin=*,nosep]
+    \item \textbf{No self-service password reset.} ``Forgot password?'' only shows Nirmaan's contacts; a user who loses their password stays locked out until staff send a reset link.
+    \item \textbf{Travel claims cannot be submitted, and Finance pays one claim at a time.} Pre-approval categories are enforced, but pre-approvals themselves are deferred to Phase~2. Bank details and batch payouts are also missing, so Finance sees only claims and approved amounts and records each payment individually.
+    \item \textbf{No SLA reminders or COO daily digest.} The SLA targets (2 working days for priority, 5 for normal) are stored in \texttt{settings} but unused, so a stalled claim triggers no alert and the COO gets one email per verified claim.
+\end{itemize}
+
+% -------------------- 6. CONTRIBUTIONS --------------------
+\section{Individual contributions}
+
+\begin{itemize}[leftmargin=*,nosep]
+    \item \textbf{Sathvik P Narayan:} Project skeleton, schema, user/role/permission model, security, teams/cohorts/budgets, claim workflow and state machine, documents and storage, payments, queues, demo data, integration tests, MCP/OAuth connector, duplicate-invoice protection, UI redesign (sign-in, app shell, team home), stakeholder liaison \todo{confirm}. 19 of 23 commits.
+
+    \item \textbf{Aishworya Shrivastav:} Test documentation (strategy, black-box, white-box, security and non-functional cases), UI redesign brief mockups, schema comments migration (V5) and database README; currently merging the redesign across the remaining screens. 4 of 23 commits \todo{add anything not visible in git}.
+\end{itemize}
+
+\end{document}
