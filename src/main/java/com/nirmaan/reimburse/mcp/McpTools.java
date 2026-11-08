@@ -200,6 +200,19 @@ public class McpTools {
                         List.of("claim_code", "document_type", "filename", "content_base64")),
                 false, this::uploadDocument);
 
+        if (inboxDir != null) {
+            add("attach_inbox_file", "Attach a file from the inbox folder",
+                    "Attaches a file that was placed in the signed-in member's inbox folder on the server "
+                            + "(<inbox>/<member email>/<filename>) to a DRAFT or RETURNED claim. Use this instead of "
+                            + "upload_document for large files such as photos. Pass only the file name, not a path. "
+                            + "Allowed: PDF, JPG, PNG, HEIC, max 10 MB.",
+                    schema(Map.of("claim_code", str("Claim code"),
+                            "document_type", enumProp("What the file is", List.of("INVOICE", "PAYMENT_PROOF", "OTHER")),
+                            "filename", str("File name in your inbox folder, e.g. invoice.png")),
+                            List.of("claim_code", "document_type", "filename")),
+                    false, this::attachInboxFile);
+        }
+
         add("add_claim_message", "Message Nirmaan staff",
                 "Posts a message on a claim's thread (visible to the team and Nirmaan staff), e.g. to answer a "
                         + "question from staff.",
