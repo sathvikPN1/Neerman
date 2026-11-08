@@ -15,6 +15,7 @@ Startup team members can connect **ChatGPT** or **Claude** to the reimbursement 
 | `update_draft_claim` | Changes fields of a DRAFT or RETURNED claim | Yes (draft only) |
 | `get_upload_link` | One-time browser link (30 minutes) to attach files to a draft | No |
 | `upload_document` | Attaches a file sent as base64 (PDF, JPG, PNG, HEIC, max 10 MB) | Yes (draft only) |
+| `attach_inbox_file` | Local demo only: attaches a photo or PDF from the member's inbox folder by file name (PDF, JPG, PNG, HEIC, max 10 MB). Listed only when `MCP_INBOX_DIR` is set | Yes (draft only) |
 | `add_claim_message` | Posts on the claim's message thread | Yes |
 
 **Not possible through the assistant:**
@@ -47,7 +48,17 @@ ChatGPT / Claude ──(1) POST /mcp ──────────────�
   - refresh tokens **rotate**: reusing an old one revokes the whole grant;
   - only SHA-256 hashes of codes and tokens are stored.
 - **Revocation:** students see the connected assistants under **AI assistant** in the menu and can **Revoke** them. Deactivating a user also stops their tokens working.
-- **Code:** `src/main/java/com/nirmaan/reimburse/mcp/`. Schema: `V3__mcp_oauth.sql`. Tests: `McpConnectorIT`, `SecretsTest`.
+- **Code:** `src/main/java/com/nirmaan/reimburse/mcp/`. Schema: `V3__mcp_oauth.sql`. Tests: `McpConnectorIT`, `McpInboxIT`, `SecretsTest`.
+
+## Attaching large files from a local folder (demo setups only)
+
+`upload_document` needs the file as base64 inside the request, which is too big for phone photos. For local demos the app can instead read files from a folder on the host:
+
+- Drop the file in `inbox/<member email in lowercase>/`, e.g. `inbox/priya@agrisense.local/invoice.png`.
+- Ask the assistant to attach it. It calls `attach_inbox_file(claim_code, document_type, filename)` with just the file name.
+- The file goes through the same checks as any upload: draft or returned claims only, the member's own team, file type detected by content, 10 MB limit, duplicate protection.
+- Only plain file names in the signed-in member's own folder are accepted. Paths, `..`, hidden files and symlinks (including a symlinked member folder) are refused, so one member cannot attach another's files.
+- It is **off unless `MCP_INBOX_DIR` is set**. `docker-compose.yml` sets it to `/inbox` and mounts `./inbox` read-only, which is git-ignored. Leave it unset in production, where members use the one-time upload link or base64 upload instead.
 
 ## Running it with ChatGPT or claude.ai (needs a public HTTPS address)
 
