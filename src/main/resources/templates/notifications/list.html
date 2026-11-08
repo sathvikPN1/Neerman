@@ -1,24 +1,30 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head('Notifications')}"></head>
-<body>
-<div th:replace="~{fragments/layout :: nav}"></div>
-<main id="main" class="max-w-3xl mx-auto px-4 py-6 space-y-4">
-    <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-semibold">Notifications</h1>
-        <form th:if="${unreadCount > 0}" th:action="@{/notifications/read-all}" method="post"><button class="btn btn-ghost">Mark all read</button></form>
+<!-- Screen 18 of the design handoff: notifications, unread first-tinted. Markup follows design.html, section "18 Notifications". -->
+<head th:replace="~{fragments/shell :: head('Notifications')}"></head>
+<body th:replace="~{fragments/shell :: page('notifications', ~{::#content})}">
+<div id="content" style="display:contents">
+<div class="page-narrow">
+
+    <div class="page-head">
+        <div><h1 class="page-title">Notifications</h1><span class="text-muted" th:text="${unreadCount} + ' unread'">3 unread</span></div>
+        <form th:if="${unreadCount > 0}" th:action="@{/notifications/read-all}" method="post" style="margin:0"><button class="btn btn-ghost btn-md">Mark all as read</button></form>
     </div>
-    <p th:if="${notifications.isEmpty()}" class="card p-10 text-center text-slate-600">You're all caught up.</p>
-    <ul class="card divide-y" th:unless="${notifications.isEmpty()}">
-        <li th:each="n : ${notifications}">
-            <a th:href="@{/notifications/{id}/open(id=${n.id()})}" class="flex gap-3 px-4 py-3 hover:bg-slate-50">
-                <span class="mt-1.5 h-2 w-2 rounded-full shrink-0" th:classappend="${n.read()} ? 'bg-transparent' : 'bg-brand-600'" aria-hidden="true"></span>
-                <span><span th:classappend="${n.read()} ? 'text-slate-600' : 'font-medium'" th:text="${n.message()}"></span>
-                    <span class="sr-only" th:unless="${n.read()}">(unread)</span>
-                    <span class="block text-xs text-slate-500" th:text="${@fmt.dateTime(n.createdAt())}"></span></span>
-            </a>
-        </li>
-    </ul>
-</main>
+
+    <div class="list">
+        <div th:if="${notifications.isEmpty()}" class="empty"><i class="icon-bell" style="font-size:28px;color:var(--color-accent)" aria-hidden="true"></i><span>You're all caught up.</span></div>
+        <a th:each="n : ${notifications}" th:href="@{/notifications/{id}/open(id=${n.id()})}" class="row-link"
+           th:style="'display:flex;gap:12px;padding:14px 16px;border-bottom:1px solid var(--color-neutral-200);background:' + (${n.read()} ? '#fff' : 'var(--color-accent-100)')">
+            <span style="width:36px;height:36px;flex:none;display:grid;place-items:center;border:1px solid var(--color-divider);background:#fff" aria-hidden="true">
+                <i class="icon-bell" style="font-size:18px;color:var(--color-accent)"></i></span>
+            <div style="flex:1;display:flex;flex-direction:column;gap:2px;font-size:14px;min-width:0">
+                <span th:style="${n.read()} ? '' : 'font-weight:600'" th:text="${n.message()}">Priority claim NRM-2026-00003 from MedTrack is ready for approval.</span>
+                <span class="text-muted" style="font-size:12px" th:text="${@fmt.dateTime(n.createdAt())}">12 min ago</span>
+            </div>
+            <span th:unless="${n.read()}" style="width:8px;height:8px;border-radius:50%;background:var(--color-accent);margin-top:6px;flex:none" aria-hidden="true"></span>
+        </a>
+    </div>
+</div>
+</div>
 </body>
 </html>
