@@ -1,39 +1,48 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head('Audit log')}"></head>
-<body>
-<div th:replace="~{fragments/layout :: nav}"></div>
-<main id="main" class="max-w-6xl mx-auto px-4 py-6 space-y-4">
-    <h1 class="text-2xl font-semibold">Audit log</h1>
-    <form method="get" class="card p-3 flex flex-wrap gap-2 items-end">
-        <div><label class="label" for="entityType">Entity</label>
-            <select class="input" id="entityType" name="entityType"><option value="">All</option>
-                <option th:each="e : ${entityTypes}" th:value="${e}" th:text="${e}" th:selected="${entityType == e.name()}"></option></select></div>
-        <div><label class="label" for="action">Action</label><input class="input" id="action" name="action" th:value="${action}" placeholder="e.g. APPROVED"></div>
-        <button class="btn btn-primary">Filter</button>
-    </form>
-    <div class="card overflow-x-auto">
-        <table class="table w-full text-sm">
-            <thead><tr><th>When (IST)</th><th>Who</th><th>Action</th><th>Entity</th><th>Change</th><th>Detail</th></tr></thead>
-            <tbody>
-            <tr th:if="${page.isEmpty()}"><td colspan="6" class="text-center text-slate-500 py-8">No entries.</td></tr>
-            <tr th:each="e : ${page.content}">
-                <td class="whitespace-nowrap" th:text="${@fmt.dateTime(e.createdAt())}"></td>
-                <td><span th:text="${e.actorName()}"></span><div th:if="${e.onBehalfOfName() != null}" class="text-xs text-slate-500" th:text="'on behalf of ' + ${e.onBehalfOfName()}"></div>
-                    <div th:if="${e.permissionUsed() != null}" class="text-xs text-slate-500 font-mono" th:text="${e.permissionUsed()}"></div></td>
-                <td class="font-mono text-xs" th:text="${e.action()}"></td>
-                <td><a th:if="${e.entityType() == 'CLAIM'}" class="text-brand-700 underline" th:href="@{/claims/{id}(id=${e.entityId()})}" th:text="'Claim #' + ${e.entityId()}"></a>
-                    <span th:unless="${e.entityType() == 'CLAIM'}" th:text="${e.entityType()} + (${e.entityId() != null} ? ' #' + ${e.entityId()} : '')"></span></td>
-                <td class="text-xs" th:text="${e.fromState() != null or e.toState() != null} ? ${e.fromState() ?: '∅'} + ' → ' + ${e.toState()} : ''"></td>
-                <td class="text-xs text-slate-600 break-all" th:text="${e.detail()}"></td>
-            </tr>
-            </tbody>
-        </table>
+<!-- Screen 17 of the design handoff: audit log, newest first. Markup follows design.html, section "17 Audit log". -->
+<head th:replace="~{fragments/shell :: head('Audit log')}"></head>
+<body th:replace="~{fragments/shell :: page('audit', ~{::#content})}">
+<div id="content" style="display:contents">
+
+    <div class="page-head">
+        <div><h1 class="page-title">Audit log</h1><span class="text-muted">Every action, newest first. Times in IST.</span></div>
     </div>
-    <nav class="flex justify-between" aria-label="Pagination">
-        <a th:if="${page.hasPrevious()}" class="btn btn-ghost" th:href="@{/audit(page=${page.number - 1},entityType=${entityType},action=${action})}">← Newer</a><span></span>
-        <a th:if="${page.hasNext()}" class="btn btn-ghost" th:href="@{/audit(page=${page.number + 1},entityType=${entityType},action=${action})}">Older →</a>
+
+    <form method="get" class="form-grid-sm" aria-label="Filters">
+        <div class="field"><label for="entityType">Entity</label>
+            <select class="input" id="entityType" name="entityType"><option value="">All entities</option>
+                <option th:each="e : ${entityTypes}" th:value="${e}" th:text="${e}" th:selected="${entityType == e.name()}">CLAIM</option></select></div>
+        <div class="field"><label for="action">Action</label><input class="input mono" id="action" name="action" th:value="${action}" placeholder="e.g. APPROVED"></div>
+        <button class="btn btn-secondary btn-md"><i class="icon-filter" aria-hidden="true"></i>Filter</button>
+    </form>
+
+    <div class="list">
+        <div th:if="${page.isEmpty()}" class="empty">No entries.</div>
+        <div th:each="e : ${page.content}" class="list-row" style="gap:4px 16px;padding:12px 16px;font-size:14px;align-items:flex-start">
+            <span style="font:400 12px 'JetBrains Mono';color:var(--color-neutral-700);min-width:150px;padding-top:2px" th:text="${@fmt.dateTime(e.createdAt())}">28 Oct 2026, 4:12 pm</span>
+            <div style="flex:1 1 260px;display:flex;flex-direction:column;gap:2px;min-width:0">
+                <span><b th:text="${e.actorName()}">R. Krishnan</b>
+                    <th:block th:if="${e.onBehalfOfName() != null}" th:text="' (on behalf of ' + ${e.onBehalfOfName()} + ')'"></th:block>
+                    <th:block th:text="' ' + ${@fmt.humanise(e.action()).toLowerCase()} + ' '">approved</th:block>
+                    <a th:if="${e.entityType() == 'CLAIM'}" th:href="@{/claims/{id}(id=${e.entityId()})}" style="font-family:'JetBrains Mono';font-size:13px" th:text="'Claim #' + ${e.entityId()}">Claim #4</a>
+                    <span th:unless="${e.entityType() == 'CLAIM'}" class="mono" style="font-size:13px" th:text="${e.entityType()} + (${e.entityId() != null} ? ' #' + ${e.entityId()} : '')">TEAM #2</span></span>
+                <span th:if="${e.fromState() != null or e.toState() != null}" class="muted-sm" th:text="${e.fromState() ?: '∅'} + ' → ' + ${e.toState()}">VERIFIED → APPROVED</span>
+                <span th:if="${e.detail() != null}" class="text-muted" style="font-size:12px;overflow-wrap:anywhere" th:text="${e.detail()}"></span>
+            </div>
+            <span th:if="${e.permissionUsed() != null}" class="tag tag-muted mono" style="font-size:11px" th:text="${e.permissionUsed()}">CLAIM_APPROVE</span>
+        </div>
+    </div>
+
+    <nav style="display:flex;justify-content:space-between;align-items:center;font-size:14px;gap:8px" aria-label="Pagination">
+        <span class="text-muted" th:text="'Page ' + ${page.number + 1} + ' of ' + ${page.totalPages > 0 ? page.totalPages : 1}">Page 1 of 3</span>
+        <div style="display:flex;gap:8px">
+            <a th:if="${page.hasPrevious()}" class="btn btn-secondary" style="min-height:40px" th:href="@{/audit(page=${page.number - 1},entityType=${entityType},action=${action})}">Newer</a>
+            <span th:unless="${page.hasPrevious()}" class="btn btn-secondary" style="min-height:40px;opacity:.45" aria-disabled="true">Newer</span>
+            <a th:if="${page.hasNext()}" class="btn btn-secondary" style="min-height:40px" th:href="@{/audit(page=${page.number + 1},entityType=${entityType},action=${action})}">Older</a>
+            <span th:unless="${page.hasNext()}" class="btn btn-secondary" style="min-height:40px;opacity:.45" aria-disabled="true">Older</span>
+        </div>
     </nav>
-</main>
+</div>
 </body>
 </html>
