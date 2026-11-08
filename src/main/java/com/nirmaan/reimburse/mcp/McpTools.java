@@ -291,14 +291,17 @@ public class McpTools {
         return m;
     }
 
-    private Map<String, Object> uploadDocument(JsonNode a) {
-        Long id = resolve(a);
-        DocumentType type;
+    private DocumentType documentType(JsonNode a) {
         try {
-            type = DocumentType.valueOf(required(a, "document_type").toUpperCase(Locale.ROOT));
+            return DocumentType.valueOf(required(a, "document_type").toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException e) {
             throw new ToolError("document_type must be INVOICE, PAYMENT_PROOF or OTHER.");
         }
+    }
+
+    private Map<String, Object> uploadDocument(JsonNode a) {
+        Long id = resolve(a);
+        DocumentType type = documentType(a);
         String b64 = required(a, "content_base64");
         int comma = b64.indexOf(',');
         if (b64.startsWith("data:") && comma > 0) {
@@ -313,7 +316,10 @@ public class McpTools {
         } catch (IllegalArgumentException e) {
             throw new ToolError("content_base64 is not valid base64.");
         }
-        DocumentView doc = documents.upload(id, type, required(a, "filename"), bytes);
+        return uploaded(id, documents.upload(id, type, required(a, "filename"), bytes));
+    }
+
+    private Map<String, Object> uploaded(Long id, DocumentView doc) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("uploaded", doc.originalFilename());
         m.put("document_type", doc.type().label());
