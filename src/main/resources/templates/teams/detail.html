@@ -33,6 +33,9 @@
                     <span th:if="${m.invitePending()}" class="tag tag-warn">Invite sent</span>
                     <span th:unless="${m.active()}" class="tag tag-muted">Deactivated</span>
                     <span th:if="${m.active() and !m.invitePending()}" class="tag tag-accent">Active</span>
+                    <form sec:authorize="hasAuthority('TEAM_MANAGE')" th:if="${m.active()}" th:action="@{/teams/{t}/members/{u}/password-reset(t=${t.id()},u=${m.userId()})}" method="post" style="margin:0"
+                          onsubmit="return confirm('Email this member a link to set a new password?')">
+                        <button class="btn btn-ghost btn-icon" th:attr="aria-label=(${m.invitePending()} ? 'Resend invite to ' : 'Send password reset link to ') + ${m.name()},title=${m.invitePending()} ? 'Resend invite' : 'Send password reset link'"><i class="icon-key-round" aria-hidden="true"></i></button></form>
                     <form sec:authorize="hasAuthority('TEAM_MANAGE')" th:if="${m.active()}" th:action="@{/teams/{t}/members/{u}/remove(t=${t.id()},u=${m.userId()})}" method="post" style="margin:0"
                           onsubmit="return confirm('Remove this member and deactivate their account?')">
                         <button class="btn btn-ghost btn-icon" title="Remove member" th:attr="aria-label='Remove ' + ${m.name()}"><i class="icon-user-x" aria-hidden="true"></i></button>

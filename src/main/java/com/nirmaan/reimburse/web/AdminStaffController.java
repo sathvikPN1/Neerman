@@ -120,6 +120,13 @@ public class AdminStaffController {
         return "redirect:/admin/staff";
     }
 
+    @PostMapping("/admin/staff/{id}/password-reset")
+    public String sendPasswordReset(@PathVariable Long id, RedirectAttributes redirect) {
+        userAdmin.sendPasswordReset(id);
+        redirect.addFlashAttribute("success", "Password reset link sent. It works for 24 hours.");
+        return "redirect:/admin/staff/" + id;
+    }
+
     @PostMapping("/admin/staff/{id}/resend-invite")
     public String resendInvite(@PathVariable Long id, RedirectAttributes redirect) {
         userAdmin.resendInvite(id);

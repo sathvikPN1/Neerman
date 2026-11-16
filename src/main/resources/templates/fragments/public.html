@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Brand panel of the signed-out pages (sign in, forgot password): screen 01 of the design handoff.
+     Left half on web, top on phone. -->
+    <div th:fragment="hero" style="flex:1 1 360px;background:var(--color-accent-900);color:#fff;padding:40px 32px;display:flex;flex-direction:column;gap:24px;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:12px"><img th:src="@{/design/assets/180fa63b.png}" alt="Nirmaan" style="width:44px;height:44px"><div style="display:flex;flex-direction:column;line-height:1.15"><span style="font-family:var(--font-heading);font-weight:600;font-size:20px">Nirmaan</span><span style="font-size:13px;color:var(--color-accent-300)">The pre-incubator of IIT Madras</span></div></div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+            <h1 style="margin:0;font-size:44px;line-height:1.05;color:#fff;text-wrap:balance">Spend on building. Get reimbursed without the paperwork chase.</h1>
+            <p style="margin:0;color:var(--color-accent-200);font-size:15px;max-width:420px">Claims for components, fabrication, software and travel, from invoice to your bank account.</p>
+        </div>
+        <ol aria-label="How a claim moves" style="margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid rgba(255,255,255,.18)">
+            <li style="padding:12px 10px;display:flex;flex-direction:column;gap:6px;border-right:1px solid rgba(255,255,255,.18)"><i class="icon-upload" aria-hidden="true" style="font-size:20px;color:var(--color-accent-400)"></i><span style="font:500 11px 'JetBrains Mono';color:var(--color-accent-300)">01</span><span style="font-size:13px">Submit</span></li>
+            <li style="padding:12px 10px;display:flex;flex-direction:column;gap:6px;border-right:1px solid rgba(255,255,255,.18)"><i class="icon-clipboard-check" aria-hidden="true" style="font-size:20px;color:var(--color-accent-400)"></i><span style="font:500 11px 'JetBrains Mono';color:var(--color-accent-300)">02</span><span style="font-size:13px">Verify</span></li>
+            <li style="padding:12px 10px;display:flex;flex-direction:column;gap:6px;border-right:1px solid rgba(255,255,255,.18)"><i class="icon-circle-check" aria-hidden="true" style="font-size:20px;color:var(--color-accent-400)"></i><span style="font:500 11px 'JetBrains Mono';color:var(--color-accent-300)">03</span><span style="font-size:13px">Approve</span></li>
+            <li style="padding:12px 10px;display:flex;flex-direction:column;gap:6px"><i class="icon-banknote" aria-hidden="true" style="font-size:20px;color:var(--color-accent-400)"></i><span style="font:500 11px 'JetBrains Mono';color:var(--color-accent-300)">04</span><span style="font-size:13px">Paid</span></li>
+        </ol>
+    </div>
+</body>
+</html>
