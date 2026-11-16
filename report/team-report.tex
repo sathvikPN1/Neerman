@@ -1,0 +1,150 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=0.7in,top=0.6in,bottom=0.7in]{geometry}
+\usepackage{setspace}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{parskip}
+\usepackage{xcolor}
+\usepackage{calc}
+\usepackage[compact]{titlesec}
+
+\setlength{\parskip}{0.3em}
+\setlength{\parindent}{0pt}
+\titlespacing*{\section}{0pt}{1.0ex plus .2ex minus .1ex}{0.4ex plus .1ex}
+\hypersetup{colorlinks=true, linkcolor=blue, urlcolor=blue}
+
+\title{
+    CS5013 Final Project Report\\
+    \large\textit{Neerman}
+}
+\author{Sathvik P Narayan, ID26S414 \and Aishworya Shrivastav, GE26Z840}
+\date{}
+
+\begin{document}
+\maketitle
+\vspace{-2.0em}
+
+\begin{description}[
+    leftmargin=!,
+    labelwidth=\widthof{\textbf{Submission commit:}},
+    nosep,
+    font=\bfseries
+]
+    \item[Team Name:] DuoBytes
+    \item[Repository:] \url{https://github.com/sathvikPN1/Neerman}
+    \item[Submission commit:] \texttt{[40-char SHA or tag]} (date: \texttt{[YYYY-MM-DD]}).
+    \item[Docker image:] \url{https://drive.google.com/[share-link]} (view access to course staff).
+    \item[Tagline:] \textit{A web app that takes reimbursement claims from Nirmaan (IIT Madras pre-incubator) startup teams through staff verification, COO approval and finance payment, with an audit trail.}
+\end{description}
+
+\textbf{AI-authorship clause.}
+\textit{We used AI tools to help draft parts of this report. The claims,
+numbers, commit references, stakeholder statements, and the Docker
+image are our own; the prose shaping may have been assisted. We can
+defend every sentence of this report, and every line of code in the
+submission commit, in the viva.}
+
+\section{Executive summary}
+
+Nirmaan runs its startup-reimbursement process over email: teams send invoices and payment proofs, staff check them by hand, and approvals and payments are hard to track or audit. Neerman replaces this with one tracked workflow.
+
+We shipped a server-rendered Spring Boot application (PostgreSQL, Thymeleaf/HTMX) with four role-specific work areas. Teams create claims and upload invoices and proofs. Staff verify them side by side. The COO approves, fully or partially, from a mobile-first screen. Finance records the payment with a UTR. Every transition is audit-logged and notified in-app and by email. We later added duplicate-invoice blocking and an MCP connector that lets ChatGPT or Claude prepare \emph{draft} claims; the student still presses Submit.
+
+Stakeholder verdict: [accepted / partially accepted / not accepted], final demo on [YYYY-MM-DD]. [One sentence if scope changed since the proposal, e.g.\ Phase 2 items such as pre-approvals and bank details were deferred.]
+
+\section{Course concepts used in the project}
+
+\begin{itemize}[leftmargin=*,nosep]
+    \item \textbf{Module [X] -- State machine / state-based design.}
+    All claim status changes go through one validated \texttt{transition()}.
+    File: \texttt{src/main/java/com/nirmaan/reimburse/claim/ClaimStateMachine.java}.
+    Commit: \texttt{5fffee1}.
+
+    \item \textbf{Module [X] -- Authorization (RBAC with fine-grained permissions).}
+    Roles are only default bundles; every service method has \texttt{@PreAuthorize}, with expiring grants and a four-eyes rule.
+    Files: \texttt{user/PermissionService.java}, \texttt{config/SecurityConfig.java}, \texttt{config/AuthorityRefreshFilter.java}.
+    Commit: \texttt{5069608}.
+
+    \item \textbf{Module [X] -- Concurrency control.}
+    Optimistic locking (\texttt{@Version}) on claims and a row lock on the team so concurrent approvals cannot overspend the budget.
+    File: \texttt{claim/ClaimStateMachine.java}.
+    Commit: \texttt{3211593}.
+
+    \item \textbf{Module [X] -- Layered / feature-packaged architecture.}
+    Thin controllers, services holding the rules, repositories, and a pluggable \texttt{StorageService} (disk or S3) and \texttt{EmailSender} (log or SMTP).
+    Files: \texttt{web/}, \texttt{common/storage/}, \texttt{notification/EmailSender.java}.
+    Commit: \texttt{16759bc}.
+
+    \item \textbf{Module [X] -- Automated testing.}
+    182 JUnit tests: unit tests plus Testcontainers (PostgreSQL 16) integration tests; about 93\% service-layer line coverage (JaCoCo).
+    Files: \texttt{src/test/java/.../it/IntegrationTest.java}, \texttt{claim/ClaimStateMachineTest.java}.
+    Commit: \texttt{a221183}.
+
+    \item \textbf{Module [X] -- Test design (black-box, white-box, security, non-functional).}
+    Written test strategy, case catalogue and traceability matrix.
+    Files: \texttt{tests/01-test-strategy.md} to \texttt{tests/07-traceability-matrix.md}.
+    Commit: \texttt{217fff4}.
+
+    \item \textbf{Module [X] -- Secure coding.}
+    Magic-byte file-type check, SHA-256 duplicate detection, login rate limiting, BCrypt, append-only audit log (DB trigger), OAuth 2.1 with PKCE for the connector.
+    Files: \texttt{document/FileTypeDetector.java}, \texttt{config/LoginAttemptService.java}, \texttt{mcp/OAuthService.java}.
+    Commits: \texttt{39735e3}, \texttt{a3f2cec}.
+
+    \item \textbf{Module [X] -- Containerisation and deployment.}
+    Multi-stage Dockerfile and a Compose stack (app, PostgreSQL, MinIO, MailHog).
+    Files: \texttt{Dockerfile}, \texttt{docker-compose.yml}.
+    Commit: \texttt{6d199d8}.
+
+    \item \textbf{Module [X] -- Requirements and documented assumptions.}
+    40+ numbered decisions taken where the brief was open.
+    File: \texttt{ASSUMPTIONS.md}.
+\end{itemize}
+
+\section{AI-usage summary}
+
+\textbf{Tools used.}
+Claude Code [~X\%], [other tools, ~Y\%]. Prompts are kept in \texttt{docs/prompts/}.
+
+\textbf{One substantive help.}
+[e.g.\ Claude Code generated the first version of \texttt{IntegrationTest.java} (state transitions, team isolation, four-eyes rule), which shipped with small edits. Confirm or replace.]
+
+\textbf{One substantive failure caught in review.}
+[Describe one real case, name the file and the Lecture 8/9 term it belongs to.]
+
+\textbf{Net-effect sentence.}
+[One honest sentence, with a number if you have one.]
+
+\section{Deployment and stakeholder handoff}
+
+\textbf{Build and run.}
+\begin{verbatim}
+docker load -i neerman-app.tar      # or: docker compose up --build  (from the repo)
+docker compose up
+# open http://localhost:8080  and sign in as coo@nirmaan.local / Demo@1234
+\end{verbatim}
+Other demo logins and a step-by-step walkthrough are in \texttt{README.md}. Outgoing email is visible in MailHog at \texttt{localhost:8025}.
+
+\textbf{Where the artefact lives after the course.}
+[Nirmaan's server / their GitHub / nowhere. Be honest.]
+
+\textbf{Stakeholder quote.}
+\begin{quote}\textit{``[Paste the stakeholder's own words from the final demo email.]''\\
+-- [Name, role], [date].}\end{quote}
+
+\section{Known limitations}
+
+\begin{itemize}[leftmargin=*,nosep]
+    \item Limitation 1 -- Single instance only: the login rate limiter and last-active throttle are held in memory, so running several app instances would not share lockout counts (needs Redis or similar).
+    \item Limitation 2 -- Travel claims cannot be submitted: pre-approval categories are enforced but pre-approvals themselves are not built yet. Bank details and batch payouts are also missing, so Finance enters payments one claim at a time.
+    \item Limitation 3 -- Emails are best effort: a failed SMTP send is logged, not retried, and there is no self-service password reset (staff send reset links). HEIC receipts upload but cannot be previewed in browsers.
+\end{itemize}
+
+\section{Individual contributions}
+
+\begin{itemize}[leftmargin=*,nosep]
+    \item \textbf{Sathvik P Narayan:} application design and implementation (workflow, permissions, storage, payments, notifications, MCP connector, duplicate protection, UI redesign), Docker setup, and [stakeholder liaison, if applicable].
+    \item \textbf{Aishworya Shrivastav:} test documentation (strategy, black-box, white-box, security and non-functional cases, \texttt{Test-Cases.xlsx}) and the UI redesign brief mockups; [test execution, if applicable].
+\end{itemize}
+
+\end{document}
